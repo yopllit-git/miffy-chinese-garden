@@ -476,14 +476,12 @@ function renderStartScreen() {
   instruction.textContent = todayComplete ? "" : "準備好了就開始。完成 20 題可以得到 1 顆星星。";
   roundLabel.textContent = todayComplete ? "今日完成" : "尚未開始";
   score.textContent = state.score;
-  knownCount.textContent = state.score;
-  practiceCount.textContent = state.practiced;
   progressFill.style.width = `${Math.min((state.practiced / SESSION_LENGTH) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
   celebration.hidden = !todayComplete;
   completionMessage.textContent = todayComplete ? "今天任務已完成！明天再來拿星星。" : "";
-  startButton.hidden = false;
-  startButton.textContent = todayComplete ? "今天任務完成" : "開始練習";
+  startButton.hidden = todayComplete;
+  startButton.textContent = "開始練習";
   startButton.disabled = todayComplete;
   speakButton.hidden = true;
   nextButton.disabled = true;
@@ -496,7 +494,7 @@ function renderCompletionScreen() {
   instruction.textContent = "";
   completionMessage.textContent = `恭喜完成第${ordinalText(completedPracticeNumber)}個練習`;
   celebration.hidden = false;
-  startButton.hidden = false;
+  startButton.hidden = getTodayStars() >= 3;
   startButton.textContent = getTodayStars() >= 3 ? "今天任務完成" : "開始下一個練習";
   startButton.disabled = getTodayStars() >= 3;
   speakButton.hidden = true;
@@ -682,6 +680,10 @@ function addProfile() {
 
 function deleteProfile() {
   if (state.profiles.length <= 1) return;
+
+  const profile = activeProfile();
+  const confirmed = window.confirm(`刪除「${profile.name}」和所有學習紀錄？`);
+  if (!confirmed) return;
 
   const index = state.profiles.findIndex((profile) => profile.id === state.activeProfileId);
   state.profiles.splice(index, 1);
