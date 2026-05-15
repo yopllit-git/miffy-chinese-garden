@@ -119,31 +119,11 @@ h1 {
   font-size: 1.45rem;
 }
 
-.mode-tabs {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  margin: 26px 0 20px;
-}
-
-.tab,
 .secondary-button,
 .speak-button {
   border-radius: 8px;
   min-height: 44px;
   font-weight: 800;
-}
-
-.tab {
-  padding: 0 8px;
-  background: #eef4f8;
-  color: #385166;
-  border: 1px solid #d2dee8;
-}
-
-.tab.active {
-  background: var(--blue);
-  color: white;
 }
 
 .prompt-area {
@@ -272,7 +252,6 @@ h1 {
 }
 
 .choice-button:focus-visible,
-.tab:focus-visible,
 .speak-button:focus-visible,
 .start-button:focus-visible,
 .secondary-button:focus-visible,
@@ -434,15 +413,6 @@ h1 {
 
   h1 {
     font-size: 2rem;
-  }
-
-  .mode-tabs {
-    gap: 6px;
-  }
-
-  .tab {
-    min-height: 48px;
-    font-size: 0.95rem;
   }
 
   .prompt-area {

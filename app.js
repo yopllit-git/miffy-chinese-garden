@@ -102,11 +102,8 @@ const resetButton = document.querySelector("#reset-button");
 const score = document.querySelector("#score");
 const roundLabel = document.querySelector("#round-label");
 const progressFill = document.querySelector("#progress-fill");
-const knownCount = document.querySelector("#known-count");
-const practiceCount = document.querySelector("#practice-count");
 const wordList = document.querySelector("#word-list");
 const soundToggle = document.querySelector("#sound-toggle");
-const tabs = document.querySelectorAll(".tab");
 const navButtons = document.querySelectorAll(".nav-button");
 const pagePanels = document.querySelectorAll(".app-page");
 const parentDetails = document.querySelector(".parent-details");
@@ -518,8 +515,6 @@ function renderChoices() {
 
 function renderStats() {
   score.textContent = state.score;
-  knownCount.textContent = state.score;
-  practiceCount.textContent = state.practiced;
   roundLabel.textContent = `第 ${Math.min(state.practiced + 1, SESSION_LENGTH)} / ${SESSION_LENGTH} 題`;
   progressFill.style.width = `${Math.min((state.practiced / SESSION_LENGTH) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
@@ -838,14 +833,6 @@ function startPractice() {
   nextRound();
 }
 
-function setMode(mode) {
-  state.mode = mode;
-  tabs.forEach((tab) => {
-    tab.classList.toggle("active", tab.dataset.mode === mode);
-  });
-  resetGame();
-}
-
 function resetGame() {
   state.score = 0;
   state.practiced = 0;
@@ -854,10 +841,6 @@ function resetGame() {
   state.recentIndexes = [];
   renderStats();
 }
-
-tabs.forEach((tab) => {
-  tab.addEventListener("click", () => setMode(tab.dataset.mode));
-});
 
 navButtons.forEach((button) => {
   button.addEventListener("click", () => showPage(button.dataset.page));
