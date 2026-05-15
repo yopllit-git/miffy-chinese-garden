@@ -356,31 +356,6 @@ h1 {
   font-weight: 900;
 }
 
-.word-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.word-list li {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #f8fbf8;
-  padding: 8px 12px;
-}
-
-.word-list strong {
-  font-size: 1.1rem;
-}
-
-.word-list span {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
 @media (max-width: 860px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -620,8 +595,16 @@ select {
 }
 
 .setup-copy h2 {
+  margin: 0 0 4px;
+  font-size: 1.45rem;
+  line-height: 1.15;
+}
+
+.setup-copy p {
   margin: 0;
-  font-size: 1.2rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 800;
 }
 
 .practice-controls {
@@ -827,15 +810,6 @@ select {
 
 .helper-text.compact {
   margin: 4px 0 12px;
-}
-
-.preview-card .word-list {
-  max-height: 360px;
-  overflow: auto;
-}
-
-.preview-card .word-list li {
-  gap: 12px;
 }
 
 .reward-panel {

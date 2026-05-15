@@ -102,11 +102,9 @@ const missionTitle = document.querySelector("#mission-title");
 const startButton = document.querySelector("#start-button");
 const speakButton = document.querySelector("#speak-button");
 const nextButton = document.querySelector("#next-button");
-const resetButton = document.querySelector("#reset-button");
 const score = document.querySelector("#score");
 const roundLabel = document.querySelector("#round-label");
 const progressFill = document.querySelector("#progress-fill");
-const wordList = document.querySelector("#word-list");
 const soundToggle = document.querySelector("#sound-toggle");
 const navButtons = document.querySelectorAll(".nav-button");
 const pagePanels = document.querySelectorAll(".app-page");
@@ -243,7 +241,6 @@ async function loadCloudData(user) {
   renderGroupManager();
   renderProfileManager();
   renderProfileSelectors();
-  renderWordList();
   renderWeekGrid();
 }
 
@@ -559,15 +556,6 @@ function renderStats() {
   }
 }
 
-function renderWordList() {
-  wordList.innerHTML = "";
-  activeWords().forEach((word) => {
-    const item = document.createElement("li");
-    item.innerHTML = `<strong>${word.text}</strong>`;
-    wordList.append(item);
-  });
-}
-
 function renderGroupManager() {
   groupTabs.innerHTML = "";
   state.groups.forEach((group, index) => {
@@ -580,7 +568,6 @@ function renderGroupManager() {
       saveGroups();
       resetGame();
       renderGroupManager();
-      renderWordList();
     });
     groupTabs.append(button);
   });
@@ -667,7 +654,6 @@ function saveCurrentGroup() {
   saveGroups();
   resetGame();
   renderGroupManager();
-  renderWordList();
 }
 
 function addGroup() {
@@ -681,7 +667,6 @@ function addGroup() {
   saveGroups();
   resetGame();
   renderGroupManager();
-  renderWordList();
 }
 
 function saveCurrentProfile() {
@@ -733,7 +718,6 @@ function deleteGroup() {
   saveGroups();
   resetGame();
   renderGroupManager();
-  renderWordList();
 }
 
 function updateSessionLength() {
@@ -756,7 +740,6 @@ function selectCourse(index) {
   saveGroups();
   resetGame();
   renderGroupManager();
-  renderWordList();
 }
 
 function dateKey(date) {
@@ -897,7 +880,6 @@ rewardProfileSelect.addEventListener("change", () => selectProfile(rewardProfile
 speakButton.addEventListener("click", () => playWordAudio(state.current));
 startButton.addEventListener("click", startPractice);
 nextButton.addEventListener("click", nextRound);
-resetButton.addEventListener("click", resetGame);
 addGroupButton.addEventListener("click", addGroup);
 saveGroupButton.addEventListener("click", saveCurrentGroup);
 deleteGroupButton.addEventListener("click", deleteGroup);
@@ -931,7 +913,6 @@ onAuthStateChanged(auth, (user) => {
 renderGroupManager();
 renderProfileManager();
 renderProfileSelectors();
-renderWordList();
 renderWeekGrid();
 parentDetails.open = true;
 renderAuth();
