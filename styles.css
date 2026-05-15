@@ -93,7 +93,7 @@ button {
 .eyebrow,
 .round-label,
 .mini-label {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 0.85rem;
   font-weight: 700;
 }
@@ -554,7 +554,8 @@ select {
 
 .topbar h2 {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.55rem;
+  line-height: 1.15;
 }
 
 .mission-card {
@@ -706,8 +707,14 @@ select {
 }
 
 .section-heading h2 {
-  margin: 0;
-  font-size: 1rem;
+  margin: 0 0 2px;
+  font-size: 1.22rem;
+  line-height: 1.18;
+}
+
+.section-heading .eyebrow {
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .step-heading {
@@ -818,7 +825,7 @@ select {
 
 .reward-hero h2 {
   margin: 14px 0 12px;
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   line-height: 1.15;
 }
 
