@@ -535,8 +535,7 @@ function renderWordList() {
   wordList.innerHTML = "";
   activeWords().forEach((word) => {
     const item = document.createElement("li");
-    const audioLabel = word.audio ? "固定音檔" : "系統朗讀";
-    item.innerHTML = `<strong>${word.text}</strong><span>${word.meaning} · ${audioLabel}</span>`;
+    item.innerHTML = `<strong>${word.text}</strong>`;
     wordList.append(item);
   });
 }

@@ -6,10 +6,12 @@
   --panel: #ffffff;
   --line: #d9e1dc;
   --green: #3f8f69;
+  --green-soft: #edf7f0;
   --coral: #e86f5c;
   --gold: #f5b947;
   --blue: #3f7fbf;
   --shadow: 0 20px 50px rgba(38, 52, 49, 0.12);
+  --soft-shadow: 0 12px 28px rgba(38, 52, 49, 0.08);
 }
 
 * {
@@ -60,6 +62,7 @@ button {
   border-radius: 8px;
   display: flex;
   flex-direction: column;
+  gap: 16px;
 }
 
 .parent-panel {
@@ -168,6 +171,7 @@ h1 {
   display: grid;
   place-items: center;
   text-align: center;
+  box-shadow: var(--soft-shadow);
 }
 
 .instruction {
@@ -356,20 +360,20 @@ h1 {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .word-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f8fbf8;
+  padding: 8px 12px;
 }
 
 .word-list strong {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
 }
 
 .word-list span {
@@ -589,6 +593,20 @@ select {
   font-size: 1.35rem;
 }
 
+.mission-card {
+  align-items: stretch;
+  border: 1px solid #e6dcc9;
+  border-radius: 8px;
+  background: #fffaf0;
+  padding: 16px;
+}
+
+.mission-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .today-stars {
   margin: 0;
   border-radius: 999px;
@@ -598,17 +616,29 @@ select {
   font-size: 1.1rem;
   font-weight: 900;
   white-space: nowrap;
+  align-self: start;
+}
+
+.practice-setup {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.8fr) minmax(0, 1.2fr);
+  gap: 14px;
+  align-items: end;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--green-soft);
+}
+
+.setup-copy h2 {
+  margin: 0;
+  font-size: 1.2rem;
 }
 
 .practice-controls {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin: 0 0 18px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f8fbf8;
 }
 
 .practice-controls label {
@@ -634,6 +664,10 @@ select {
   max-width: 360px;
   margin-top: 14px;
   margin-bottom: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbf8;
 }
 
 .prompt-area {
@@ -668,7 +702,7 @@ select {
 
 .group-manager {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   margin-top: 16px;
 }
 
@@ -676,7 +710,8 @@ select {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.92);
-  padding: 16px;
+  padding: 18px;
+  box-shadow: var(--soft-shadow);
 }
 
 .manager-grid {
@@ -701,6 +736,27 @@ select {
 .section-heading h2 {
   margin: 0;
   font-size: 1rem;
+}
+
+.step-heading {
+  justify-content: start;
+}
+
+.step-heading .small-button,
+.step-heading .group-count {
+  margin-left: auto;
+}
+
+.step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  font-weight: 900;
 }
 
 .group-count {
@@ -780,6 +836,10 @@ select {
   line-height: 1.5;
 }
 
+.helper-text.compact {
+  margin: 4px 0 12px;
+}
+
 .preview-card .word-list {
   max-height: 360px;
   overflow: auto;
@@ -852,6 +912,11 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .practice-setup {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
   .parent-hero,
   .manager-grid {
     grid-template-columns: 1fr;
@@ -895,6 +960,8 @@ select {
 
   .topbar {
     align-items: start;
+    display: grid;
+    grid-template-columns: 1fr auto;
   }
 
   .manager-actions {
@@ -907,5 +974,13 @@ select {
 
   .practice-controls {
     grid-template-columns: 1fr;
+  }
+
+  .mission-card {
+    grid-template-columns: 1fr;
+  }
+
+  .today-stars {
+    justify-self: start;
   }
 }
