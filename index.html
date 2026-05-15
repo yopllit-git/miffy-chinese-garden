@@ -11,29 +11,36 @@
   </head>
   <body>
     <main class="app-shell">
-      <section class="learning-panel" aria-labelledby="app-title">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">普通話 · 繁體認字</p>
+          <h1 id="app-title">咪菲認字小花園</h1>
+        </div>
+        <button class="icon-button" id="sound-toggle" type="button" aria-label="開關聲音">
+          🔊
+        </button>
+      </header>
+
+      <nav class="app-nav" aria-label="主要頁面">
+        <button class="nav-button active" type="button" data-page="practice">練習</button>
+        <button class="nav-button" type="button" data-page="rewards">本週集點</button>
+        <button class="nav-button" type="button" data-page="parent">家長</button>
+      </nav>
+
+      <section class="learning-panel app-page active" data-page-panel="practice" aria-labelledby="app-title">
         <header class="topbar">
           <div>
-            <p class="eyebrow">普通話 · 繁體認字</p>
-            <h1 id="app-title">咪菲認字小花園</h1>
+            <p class="eyebrow">今日任務</p>
+            <h2>拿到 3 顆星星</h2>
           </div>
-          <button class="icon-button" id="sound-toggle" type="button" aria-label="開關聲音">
-            🔊
-          </button>
+          <p class="today-stars" id="today-stars">0 / 3 ⭐</p>
         </header>
 
         <nav class="mode-tabs" aria-label="練習模式">
           <button class="tab active" type="button" data-mode="listen">聽音選字</button>
-          <button class="tab" type="button" data-mode="picture">看圖選詞</button>
-          <button class="tab" type="button" data-mode="match">找一樣</button>
         </nav>
 
         <section class="prompt-area" aria-live="polite">
-          <div class="garden-scene" id="garden-scene" aria-hidden="true">
-            <span>🌱</span>
-            <span>🌼</span>
-            <span>🍓</span>
-          </div>
           <p class="round-label" id="round-label">第 1 題</p>
           <div class="main-card">
             <p class="instruction" id="instruction">聽一聽，選出你聽到的字。</p>
@@ -60,27 +67,97 @@
         </footer>
       </section>
 
-      <aside class="parent-panel" aria-labelledby="parent-title">
+      <section class="reward-panel app-page" data-page-panel="rewards" aria-labelledby="reward-title" hidden>
+        <div class="reward-hero">
+          <p class="eyebrow">一週任務</p>
+          <h2 id="reward-title">每天 3 顆星星</h2>
+          <p>當天答對 3 題就完成任務。星星會存在這台裝置上。</p>
+        </div>
+        <div class="week-grid" id="week-grid" aria-label="本週集點"></div>
+      </section>
+
+      <section class="parent-panel app-page" data-page-panel="parent" aria-labelledby="parent-title" hidden>
         <details class="parent-details" open>
-          <summary id="parent-title">家長小面板</summary>
-          <p class="parent-note">
-            先用 12 個入門詞測感覺。之後可以把這裡換成樂樂書每一課的字詞。
-          </p>
-          <div class="stats">
+          <summary id="parent-title">家長管理</summary>
+          <div class="parent-hero">
             <div>
-              <span class="stat-number" id="known-count">0</span>
-              <span class="stat-label">答對</span>
+              <p class="eyebrow">課程設定</p>
+              <h2>管理字詞組</h2>
+              <p class="parent-note">最多 10 組。每組可以放樂樂書一課，或一週想複習的字。</p>
             </div>
-            <div>
-              <span class="stat-number" id="practice-count">0</span>
-              <span class="stat-label">已練</span>
+            <div class="stats">
+              <div>
+                <span class="stat-number" id="known-count">0</span>
+                <span class="stat-label">答對</span>
+              </div>
+              <div>
+                <span class="stat-number" id="practice-count">0</span>
+                <span class="stat-label">已練</span>
+              </div>
             </div>
           </div>
-          <h2 class="word-heading">本輪字詞</h2>
-          <ul class="word-list" id="word-list"></ul>
-          <button class="secondary-button full" id="reset-button" type="button">重新開始</button>
+
+          <section class="group-manager" aria-labelledby="group-title">
+            <div class="manager-card course-card">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">選擇課程</p>
+                  <h2 id="group-title">字詞組</h2>
+                </div>
+                <button class="small-button" id="add-group-button" type="button">新增</button>
+              </div>
+              <div class="group-tabs" id="group-tabs" aria-label="字詞組清單"></div>
+            </div>
+
+            <div class="manager-grid">
+              <div class="manager-card editor-card">
+                <div class="section-heading">
+                  <div>
+                    <p class="eyebrow">編輯</p>
+                    <h2>課程內容</h2>
+                  </div>
+                  <span class="group-count" id="group-count">0 / 10</span>
+                </div>
+
+                <label class="field-label" for="group-name">課程名稱</label>
+                <input
+                  class="text-field"
+                  id="group-name"
+                  type="text"
+                  maxlength="18"
+                  placeholder="例如：樂樂書第一課"
+                />
+
+                <label class="field-label" for="word-editor">字詞</label>
+                <textarea
+                  class="word-editor"
+                  id="word-editor"
+                  rows="8"
+                  spellcheck="false"
+                  placeholder="我&#10;你&#10;媽媽&#10;爸爸"
+                ></textarea>
+                <p class="helper-text">每行一個字詞。例：天上、小狗、小貓。</p>
+
+                <div class="manager-actions">
+                  <button class="secondary-button" id="save-group-button" type="button">儲存課程</button>
+                  <button class="ghost-button" id="delete-group-button" type="button">刪除</button>
+                </div>
+              </div>
+
+              <div class="manager-card preview-card">
+                <div class="section-heading">
+                  <div>
+                    <p class="eyebrow">預覽</p>
+                    <h2>本輪字詞</h2>
+                  </div>
+                  <button class="small-button" id="reset-button" type="button">重新開始</button>
+                </div>
+                <ul class="word-list" id="word-list"></ul>
+              </div>
+            </div>
+          </section>
         </details>
-      </aside>
+      </section>
     </main>
 
     <script src="./app.js"></script>

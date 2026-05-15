@@ -117,7 +117,7 @@ h1 {
 
 .mode-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 8px;
   margin: 26px 0 20px;
 }
@@ -468,5 +468,338 @@ h1 {
 
   .progress-row .secondary-button {
     grid-column: 1 / -1;
+  }
+}
+
+input,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+.app-shell {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.app-header,
+.app-nav,
+.reward-panel {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(217, 225, 220, 0.9);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+}
+
+.app-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+
+.nav-button {
+  min-height: 46px;
+  border-radius: 8px;
+  background: transparent;
+  color: #385166;
+  font-weight: 900;
+}
+
+.nav-button.active {
+  background: var(--green);
+  color: white;
+}
+
+.app-page:not(.active) {
+  display: none;
+}
+
+.parent-panel {
+  position: static;
+}
+
+.parent-details summary {
+  display: none;
+}
+
+.parent-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.parent-hero h2 {
+  margin: 0 0 8px;
+  font-size: 1.8rem;
+}
+
+.topbar h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.today-stars {
+  margin: 0;
+  border-radius: 999px;
+  background: #fff4d8;
+  color: #755200;
+  padding: 10px 14px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.prompt-area {
+  display: block;
+}
+
+.ghost-button,
+.small-button {
+  border-radius: 8px;
+  min-height: 44px;
+  background: #eef4f8;
+  border: 1px solid #d2dee8;
+  color: #385166;
+  font-weight: 800;
+}
+
+.small-button {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 0.9rem;
+}
+
+.ghost-button {
+  padding: 0 18px;
+}
+
+.ghost-button:disabled,
+.small-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.group-manager {
+  margin-top: 18px;
+}
+
+.manager-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 16px;
+}
+
+.manager-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.course-card {
+  padding-bottom: 10px;
+}
+
+.section-heading,
+.manager-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.group-count {
+  border-radius: 999px;
+  background: #eef4f8;
+  color: #385166;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.group-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.group-tab {
+  flex: 0 0 auto;
+  min-height: 38px;
+  max-width: 150px;
+  border-radius: 999px;
+  padding: 0 14px;
+  background: #f3f7f5;
+  border: 1px solid var(--line);
+  color: #3c4c48;
+  font-size: 0.9rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-tab.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+
+.field-label {
+  display: block;
+  margin: 12px 0 6px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.text-field,
+.word-editor {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+}
+
+.text-field {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.word-editor {
+  min-height: 220px;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.helper-text {
+  margin: 8px 0 12px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.preview-card .word-list {
+  max-height: 360px;
+  overflow: auto;
+}
+
+.preview-card .word-list li {
+  gap: 12px;
+}
+
+.reward-panel {
+  padding: 22px;
+}
+
+.reward-hero h2 {
+  margin-bottom: 8px;
+  font-size: 1.8rem;
+}
+
+.reward-hero p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.day-card {
+  min-height: 132px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: white;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.day-card.complete {
+  background: #fff8e6;
+  border-color: var(--gold);
+}
+
+.day-name,
+.day-status {
+  margin: 0;
+  font-weight: 900;
+}
+
+.day-stars {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0;
+  font-size: 1.35rem;
+}
+
+.day-stars span {
+  filter: grayscale(1);
+  opacity: 0.28;
+}
+
+.day-stars span.earned {
+  filter: none;
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .week-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .parent-hero,
+  .manager-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-header {
+    align-items: start;
+    padding: 14px;
+  }
+
+  .app-nav {
+    gap: 6px;
+  }
+
+  .nav-button {
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+
+  .topbar {
+    align-items: start;
+  }
+
+  .manager-actions {
+    align-items: stretch;
+  }
+
+  .manager-actions button {
+    flex: 1;
   }
 }
