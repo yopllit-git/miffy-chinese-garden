@@ -850,32 +850,28 @@ select {
 }
 
 .reward-panel {
-  padding: 22px;
+  padding: 18px;
 }
 
 .reward-hero h2 {
-  margin-bottom: 8px;
-  font-size: 1.8rem;
-}
-
-.reward-hero p {
-  color: var(--muted);
-  line-height: 1.6;
+  margin: 14px 0 12px;
+  font-size: 1.6rem;
+  line-height: 1.15;
 }
 
 .week-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 18px;
+  gap: 8px;
+  margin-top: 0;
 }
 
 .day-card {
-  min-height: 132px;
+  min-height: 112px;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: white;
-  padding: 12px 8px;
+  padding: 10px 6px;
   text-align: center;
 }
 
@@ -891,10 +887,12 @@ select {
 }
 
 .day-stars {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
   margin: 10px 0;
-  font-size: 1.35rem;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .day-stars span {
@@ -907,9 +905,48 @@ select {
   opacity: 1;
 }
 
+.week-summary {
+  align-self: end;
+  justify-self: end;
+  margin: 0;
+  border-radius: 999px;
+  background: #fff4d8;
+  color: #755200;
+  padding: 9px 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 @media (max-width: 760px) {
   .week-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .reward-panel {
+    padding: 14px 10px;
+  }
+
+  .reward-hero h2 {
+    margin-top: 12px;
+    font-size: 1.35rem;
+  }
+
+  .day-card {
+    min-height: 92px;
+    padding: 8px 3px;
+  }
+
+  .day-name,
+  .day-status {
+    font-size: 0.78rem;
+  }
+
+  .day-stars {
+    display: grid;
+    gap: 1px;
+    margin: 7px 0;
+    font-size: 0.82rem;
   }
 
   .practice-setup {
@@ -974,6 +1011,11 @@ select {
 
   .practice-controls {
     grid-template-columns: 1fr;
+  }
+
+  .reward-controls {
+    grid-template-columns: 1fr auto;
+    align-items: end;
   }
 
   .mission-card {

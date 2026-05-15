@@ -116,6 +116,8 @@ const wordEditor = document.querySelector("#word-editor");
 const groupCount = document.querySelector("#group-count");
 const todayStars = document.querySelector("#today-stars");
 const weekGrid = document.querySelector("#week-grid");
+const rewardTitle = document.querySelector("#reward-title");
+const weekSummary = document.querySelector("#week-summary");
 const practiceProfileSelect = document.querySelector("#practice-profile-select");
 const rewardProfileSelect = document.querySelector("#reward-profile-select");
 const practiceCourseSelect = document.querySelector("#practice-course-select");
@@ -756,16 +758,18 @@ function renderWeekGrid() {
   weekGrid.innerHTML = "";
   const labels = ["一", "二", "三", "四", "五", "六", "日"];
   const start = getWeekStart(new Date());
+  let totalStars = 0;
 
   labels.forEach((label, index) => {
     const date = new Date(start);
     date.setDate(start.getDate() + index);
     const key = dateKey(date);
     const stars = activeProfile().dailyStars[key] || 0;
+    totalStars += stars;
     const card = document.createElement("article");
     card.className = `day-card${stars >= 3 ? " complete" : ""}`;
     card.innerHTML = `
-      <p class="day-name">星期${label}</p>
+      <p class="day-name">週${label}</p>
       <div class="day-stars" aria-label="${stars} 顆星">
         ${[0, 1, 2].map((star) => `<span class="${star < stars ? "earned" : ""}">⭐</span>`).join("")}
       </div>
@@ -773,6 +777,9 @@ function renderWeekGrid() {
     `;
     weekGrid.append(card);
   });
+
+  rewardTitle.textContent = `${activeProfile().name}的中文集點卡`;
+  weekSummary.textContent = `本週 ${totalStars} / 21 ⭐`;
 }
 
 function showPage(page) {
