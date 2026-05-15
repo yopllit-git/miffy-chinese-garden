@@ -1,11 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import {
   getAuth,
-  GoogleAuthProvider,
   onAuthStateChanged,
-  signInWithPopup,
-  signInWithRedirect,
-  signOut,
 } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
 import {
   doc,
@@ -27,7 +23,6 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
-const googleProvider = new GoogleAuthProvider();
 const SESSION_LENGTH = 20;
 
 const audioByText = {
@@ -82,6 +77,8 @@ const state = {
   score: 0,
   practiced: 0,
   sessionComplete: false,
+  sessionStarted: false,
+  completedPracticeNumber: 0,
   soundOn: true,
   recentIndexes: [],
   activeGroupIndex: loadActiveGroupIndex(),
@@ -96,6 +93,9 @@ const choiceGrid = document.querySelector("#choice-grid");
 const instruction = document.querySelector("#instruction");
 const picturePrompt = document.querySelector("#picture-prompt");
 const characterPrompt = document.querySelector("#character-prompt");
+const celebration = document.querySelector("#celebration");
+const completionMessage = document.querySelector("#completion-message");
+const startButton = document.querySelector("#start-button");
 const speakButton = document.querySelector("#speak-button");
 const nextButton = document.querySelector("#next-button");
 const resetButton = document.querySelector("#reset-button");
@@ -119,10 +119,6 @@ const wordEditor = document.querySelector("#word-editor");
 const groupCount = document.querySelector("#group-count");
 const todayStars = document.querySelector("#today-stars");
 const weekGrid = document.querySelector("#week-grid");
-const authStatus = document.querySelector("#auth-status");
-const loginButton = document.querySelector("#login-button");
-const logoutButton = document.querySelector("#logout-button");
-const authMessage = document.querySelector("#auth-message");
 const practiceProfileSelect = document.querySelector("#practice-profile-select");
 const rewardProfileSelect = document.querySelector("#reward-profile-select");
 const practiceCourseSelect = document.querySelector("#practice-course-select");
@@ -267,24 +263,11 @@ async function saveCloudData() {
 }
 
 function renderAuth() {
-  if (state.user) {
-    authStatus.textContent = state.user.email || "已登入";
-    loginButton.hidden = true;
-    logoutButton.hidden = false;
-    if (!authMessage.textContent) {
-      authMessage.textContent = state.cloudReady ? "已同步雲端" : "登入中，等待同步";
-    }
-  } else {
-    authStatus.textContent = "未登入";
-    loginButton.hidden = false;
-    logoutButton.hidden = true;
-    authMessage.textContent = "登入後可跨裝置同步課程和星星。";
-  }
+  return;
 }
 
 function showAuthMessage(message, isError = false) {
-  authMessage.textContent = message;
-  authMessage.classList.toggle("error", isError);
+  console[isError ? "warn" : "info"](message);
 }
 
 function friendlyAuthError(error) {
@@ -476,9 +459,49 @@ function playCorrectFeedback() {
 function renderPrompt() {
   picturePrompt.hidden = true;
   characterPrompt.hidden = true;
+  celebration.hidden = true;
+  startButton.hidden = true;
   speakButton.hidden = false;
 
   instruction.textContent = "聽一聽，選出你聽到的字。";
+}
+
+function ordinalText(number) {
+  const labels = ["零", "一", "二", "三"];
+  return labels[number] || String(number);
+}
+
+function renderStartScreen() {
+  choiceGrid.innerHTML = "";
+  state.answered = false;
+  state.current = null;
+  instruction.textContent = "準備好了就開始。完成 20 題可以得到 1 顆星星。";
+  roundLabel.textContent = "尚未開始";
+  score.textContent = state.score;
+  knownCount.textContent = state.score;
+  practiceCount.textContent = state.practiced;
+  progressFill.style.width = `${Math.min((state.practiced / SESSION_LENGTH) * 100, 100)}%`;
+  todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
+  celebration.hidden = true;
+  startButton.hidden = false;
+  startButton.textContent = "開始練習";
+  speakButton.hidden = true;
+  nextButton.disabled = true;
+  nextButton.textContent = "下一題";
+}
+
+function renderCompletionScreen() {
+  const completedPracticeNumber = state.completedPracticeNumber || getTodayStars();
+  choiceGrid.innerHTML = "";
+  instruction.textContent = "";
+  completionMessage.textContent = `恭喜完成第${ordinalText(completedPracticeNumber)}個練習`;
+  celebration.hidden = false;
+  startButton.hidden = false;
+  startButton.textContent = getTodayStars() >= 3 ? "今天任務完成" : "開始下一個練習";
+  startButton.disabled = getTodayStars() >= 3;
+  speakButton.hidden = true;
+  nextButton.disabled = true;
+  nextButton.textContent = "下一題";
 }
 
 function renderChoices() {
@@ -501,7 +524,13 @@ function renderStats() {
   progressFill.style.width = `${Math.min((state.practiced / SESSION_LENGTH) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
   renderWeekGrid();
-  nextButton.textContent = state.sessionComplete ? "開始下一輪" : "下一題";
+  if (state.sessionComplete) {
+    renderCompletionScreen();
+  } else if (!state.sessionStarted) {
+    renderStartScreen();
+  } else {
+    nextButton.textContent = "下一題";
+  }
 }
 
 function renderWordList() {
@@ -712,6 +741,7 @@ function addTodayStar() {
   const key = dateKey(new Date());
   const profile = activeProfile();
   profile.dailyStars[key] = Math.min((profile.dailyStars[key] || 0) + 1, 3);
+  state.completedPracticeNumber = profile.dailyStars[key];
   saveProfiles();
 }
 
@@ -768,8 +798,9 @@ function handleAnswer(button, selected) {
     state.practiced += 1;
     state.score += 1;
     if (state.practiced >= SESSION_LENGTH) {
-      state.sessionComplete = true;
       addTodayStar();
+      state.sessionComplete = true;
+      state.sessionStarted = false;
     }
     button.classList.add("correct");
     playCorrectFeedback();
@@ -784,12 +815,7 @@ function handleAnswer(button, selected) {
 }
 
 function nextRound() {
-  if (state.sessionComplete) {
-    state.score = 0;
-    state.practiced = 0;
-    state.recentIndexes = [];
-    state.sessionComplete = false;
-  }
+  if (!state.sessionStarted || state.sessionComplete) return;
 
   state.current = pickWord();
   state.answered = false;
@@ -800,20 +826,33 @@ function nextRound() {
   speakCurrentWord();
 }
 
+function startPractice() {
+  if (getTodayStars() >= 3) return;
+
+  state.score = 0;
+  state.practiced = 0;
+  state.recentIndexes = [];
+  state.sessionComplete = false;
+  state.sessionStarted = true;
+  startButton.disabled = false;
+  nextRound();
+}
+
 function setMode(mode) {
   state.mode = mode;
   tabs.forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.mode === mode);
   });
-  nextRound();
+  resetGame();
 }
 
 function resetGame() {
   state.score = 0;
   state.practiced = 0;
   state.sessionComplete = false;
+  state.sessionStarted = false;
   state.recentIndexes = [];
-  nextRound();
+  renderStats();
 }
 
 tabs.forEach((tab) => {
@@ -828,6 +867,7 @@ practiceCourseSelect.addEventListener("change", () => selectCourse(practiceCours
 practiceProfileSelect.addEventListener("change", () => selectProfile(practiceProfileSelect.value));
 rewardProfileSelect.addEventListener("change", () => selectProfile(rewardProfileSelect.value));
 speakButton.addEventListener("click", () => playWordAudio(state.current));
+startButton.addEventListener("click", startPractice);
 nextButton.addEventListener("click", nextRound);
 resetButton.addEventListener("click", resetGame);
 addGroupButton.addEventListener("click", addGroup);
@@ -839,28 +879,6 @@ deleteProfileButton.addEventListener("click", deleteProfile);
 soundToggle.addEventListener("click", () => {
   state.soundOn = !state.soundOn;
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
-});
-
-loginButton.addEventListener("click", async () => {
-  showAuthMessage("正在開啟 Google 登入...");
-  try {
-    await signInWithPopup(auth, googleProvider);
-  } catch (error) {
-    if (error.code === "auth/popup-closed-by-user") {
-      showAuthMessage("登入視窗已關閉。");
-      return;
-    }
-
-    showAuthMessage(friendlyAuthError(error), true);
-    if (error.code === "auth/popup-blocked") {
-      await signInWithRedirect(auth, googleProvider);
-    }
-  }
-});
-
-logoutButton.addEventListener("click", async () => {
-  showAuthMessage("正在登出...");
-  await signOut(auth);
 });
 
 onAuthStateChanged(auth, (user) => {
@@ -888,4 +906,4 @@ renderWordList();
 renderWeekGrid();
 parentDetails.open = true;
 renderAuth();
-nextRound();
+renderStats();

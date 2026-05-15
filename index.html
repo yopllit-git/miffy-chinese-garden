@@ -19,12 +19,6 @@
         <button class="icon-button" id="sound-toggle" type="button" aria-label="開關聲音">
           🔊
         </button>
-        <div class="auth-panel">
-          <span class="auth-status" id="auth-status">未登入</span>
-          <button class="small-button" id="login-button" type="button">Google 登入</button>
-          <button class="ghost-button" id="logout-button" type="button" hidden>登出</button>
-          <p class="auth-message" id="auth-message"></p>
-        </div>
       </header>
 
       <nav class="app-nav" aria-label="主要頁面">
@@ -61,6 +55,11 @@
           <p class="round-label" id="round-label">第 1 題</p>
           <div class="main-card">
             <p class="instruction" id="instruction">聽一聽，選出你聽到的字。</p>
+            <div class="celebration" id="celebration" hidden>
+              <p class="confetti" aria-hidden="true">🎉 ✨ 🎊</p>
+              <p id="completion-message">恭喜完成第一個練習</p>
+            </div>
+            <button class="start-button" id="start-button" type="button">開始練習</button>
             <button class="speak-button" id="speak-button" type="button">
               <span aria-hidden="true">▶</span>
               再聽一次
