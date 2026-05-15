@@ -122,6 +122,7 @@ const weekGrid = document.querySelector("#week-grid");
 const authStatus = document.querySelector("#auth-status");
 const loginButton = document.querySelector("#login-button");
 const logoutButton = document.querySelector("#logout-button");
+const authMessage = document.querySelector("#auth-message");
 const practiceProfileSelect = document.querySelector("#practice-profile-select");
 const rewardProfileSelect = document.querySelector("#reward-profile-select");
 const practiceCourseSelect = document.querySelector("#practice-course-select");
@@ -219,6 +220,7 @@ async function loadCloudData(user) {
   }
 
   state.cloudReady = true;
+  showAuthMessage("已同步雲端");
   resetGame();
   renderAuth();
   renderGroupManager();
@@ -269,11 +271,37 @@ function renderAuth() {
     authStatus.textContent = state.user.email || "已登入";
     loginButton.hidden = true;
     logoutButton.hidden = false;
+    if (!authMessage.textContent) {
+      authMessage.textContent = state.cloudReady ? "已同步雲端" : "登入中，等待同步";
+    }
   } else {
     authStatus.textContent = "未登入";
     loginButton.hidden = false;
     logoutButton.hidden = true;
+    authMessage.textContent = "登入後可跨裝置同步課程和星星。";
   }
+}
+
+function showAuthMessage(message, isError = false) {
+  authMessage.textContent = message;
+  authMessage.classList.toggle("error", isError);
+}
+
+function friendlyAuthError(error) {
+  const code = error?.code || "";
+  if (code.includes("unauthorized-domain")) {
+    return "這個網址還沒加入 Firebase Authorized domains。";
+  }
+  if (code.includes("operation-not-allowed")) {
+    return "Firebase 還沒啟用 Google 登入。";
+  }
+  if (code.includes("popup-blocked")) {
+    return "瀏覽器擋住登入視窗，正在改用跳轉登入。";
+  }
+  if (code.includes("permission-denied")) {
+    return "Firestore 權限規則還沒允許這個帳號存取資料。";
+  }
+  return `登入/同步失敗：${code || error?.message || "未知錯誤"}`;
 }
 
 function normalizeWords(words) {
@@ -814,25 +842,35 @@ soundToggle.addEventListener("click", () => {
 });
 
 loginButton.addEventListener("click", async () => {
+  showAuthMessage("正在開啟 Google 登入...");
   try {
     await signInWithPopup(auth, googleProvider);
   } catch (error) {
-    if (error.code !== "auth/popup-closed-by-user") {
+    if (error.code === "auth/popup-closed-by-user") {
+      showAuthMessage("登入視窗已關閉。");
+      return;
+    }
+
+    showAuthMessage(friendlyAuthError(error), true);
+    if (error.code === "auth/popup-blocked") {
       await signInWithRedirect(auth, googleProvider);
     }
   }
 });
 
 logoutButton.addEventListener("click", async () => {
+  showAuthMessage("正在登出...");
   await signOut(auth);
 });
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
+    showAuthMessage("已登入，正在同步資料...");
     loadCloudData(user).catch((error) => {
       console.warn("Cloud load failed", error);
       state.user = user;
       state.cloudReady = false;
+      showAuthMessage(friendlyAuthError(error), true);
       renderAuth();
     });
     return;
