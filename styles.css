@@ -472,7 +472,8 @@ h1 {
 }
 
 input,
-textarea {
+textarea,
+select {
   color: inherit;
   font: inherit;
 }
@@ -577,6 +578,37 @@ textarea {
   white-space: nowrap;
 }
 
+.practice-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 0;
+}
+
+.practice-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.practice-controls select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  padding: 0 12px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.reward-controls {
+  max-width: 360px;
+  margin-top: 14px;
+}
+
 .prompt-area {
   display: block;
 }
@@ -651,7 +683,8 @@ textarea {
   font-weight: 900;
 }
 
-.group-tabs {
+.group-tabs,
+.profile-tabs {
   display: flex;
   gap: 8px;
   margin: 12px 0;
@@ -659,7 +692,8 @@ textarea {
   padding-bottom: 4px;
 }
 
-.group-tab {
+.group-tab,
+.profile-tab {
   flex: 0 0 auto;
   min-height: 38px;
   max-width: 150px;
@@ -675,7 +709,8 @@ textarea {
   white-space: nowrap;
 }
 
-.group-tab.active {
+.group-tab.active,
+.profile-tab.active {
   background: var(--green);
   border-color: var(--green);
   color: white;
@@ -833,7 +868,11 @@ textarea {
     align-items: stretch;
   }
 
-  .manager-actions button {
+.manager-actions button {
     flex: 1;
+  }
+
+  .practice-controls {
+    grid-template-columns: 1fr;
   }
 }

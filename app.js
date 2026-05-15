@@ -28,6 +28,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
+const SESSION_LENGTH = 20;
 
 const audioByText = {
   我: "wo.wav",
@@ -66,17 +67,27 @@ const starterGroups = [
   },
 ];
 
+const starterProfiles = [
+  {
+    id: "miffy",
+    name: "咪菲",
+    dailyStars: {},
+  },
+];
+
 const state = {
   mode: "listen",
   current: null,
   answered: false,
   score: 0,
   practiced: 0,
+  sessionComplete: false,
   soundOn: true,
   recentIndexes: [],
-  activeGroupIndex: 0,
+  activeGroupIndex: loadActiveGroupIndex(),
   groups: loadGroups(),
-  dailyStars: loadDailyStars(),
+  profiles: loadProfiles(),
+  activeProfileId: loadActiveProfileId(),
   user: null,
   cloudReady: false,
 };
@@ -111,6 +122,14 @@ const weekGrid = document.querySelector("#week-grid");
 const authStatus = document.querySelector("#auth-status");
 const loginButton = document.querySelector("#login-button");
 const logoutButton = document.querySelector("#logout-button");
+const practiceProfileSelect = document.querySelector("#practice-profile-select");
+const rewardProfileSelect = document.querySelector("#reward-profile-select");
+const practiceCourseSelect = document.querySelector("#practice-course-select");
+const profileTabs = document.querySelector("#profile-tabs");
+const addProfileButton = document.querySelector("#add-profile-button");
+const saveProfileButton = document.querySelector("#save-profile-button");
+const deleteProfileButton = document.querySelector("#delete-profile-button");
+const profileNameInput = document.querySelector("#profile-name");
 
 let audioContext;
 let currentWordAudio;
@@ -141,19 +160,38 @@ function loadGroups() {
 
 function saveGroups() {
   localStorage.setItem("miffy-word-groups", JSON.stringify(state.groups));
+  localStorage.setItem("miffy-active-group", String(state.activeGroupIndex));
   saveCloudData();
 }
 
-function loadDailyStars() {
-  try {
-    return JSON.parse(localStorage.getItem("miffy-daily-stars")) || {};
-  } catch {
-    return {};
-  }
+function loadActiveGroupIndex() {
+  const stored = Number(localStorage.getItem("miffy-active-group"));
+  return Number.isInteger(stored) && stored >= 0 ? stored : 0;
 }
 
-function saveDailyStars() {
-  localStorage.setItem("miffy-daily-stars", JSON.stringify(state.dailyStars));
+function loadProfiles() {
+  try {
+    const stored = JSON.parse(localStorage.getItem("miffy-profiles"));
+    if (Array.isArray(stored) && stored.length) return normalizeProfiles(stored);
+  } catch {
+  }
+
+  let legacyStars = {};
+  try {
+    legacyStars = JSON.parse(localStorage.getItem("miffy-daily-stars") || "{}");
+  } catch {
+    legacyStars = {};
+  }
+  return [{ ...starterProfiles[0], dailyStars: legacyStars || {} }];
+}
+
+function loadActiveProfileId() {
+  return localStorage.getItem("miffy-active-profile") || "miffy";
+}
+
+function saveProfiles() {
+  localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
+  localStorage.setItem("miffy-active-profile", state.activeProfileId);
   saveCloudData();
 }
 
@@ -171,7 +209,9 @@ async function loadCloudData(user) {
   if (snapshot.exists()) {
     const data = snapshot.data();
     state.groups = normalizeGroups(data.groups);
-    state.dailyStars = data.dailyStars || {};
+    state.activeGroupIndex = Math.min(data.activeGroupIndex || 0, state.groups.length - 1);
+    state.profiles = normalizeProfiles(data.profiles, data.dailyStars);
+    state.activeProfileId = data.activeProfileId || state.profiles[0].id;
     persistLocalOnly();
   } else {
     state.cloudReady = true;
@@ -182,6 +222,8 @@ async function loadCloudData(user) {
   resetGame();
   renderAuth();
   renderGroupManager();
+  renderProfileManager();
+  renderProfileSelectors();
   renderWordList();
   renderWeekGrid();
 }
@@ -196,7 +238,9 @@ function normalizeGroups(groups) {
 
 function persistLocalOnly() {
   localStorage.setItem("miffy-word-groups", JSON.stringify(state.groups));
-  localStorage.setItem("miffy-daily-stars", JSON.stringify(state.dailyStars));
+  localStorage.setItem("miffy-active-group", String(state.activeGroupIndex));
+  localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
+  localStorage.setItem("miffy-active-profile", state.activeProfileId);
 }
 
 async function saveCloudData() {
@@ -209,7 +253,9 @@ async function saveCloudData() {
     ref,
     {
       groups: state.groups,
-      dailyStars: state.dailyStars,
+      activeGroupIndex: state.activeGroupIndex,
+      profiles: state.profiles,
+      activeProfileId: state.activeProfileId,
       updatedAt: serverTimestamp(),
     },
     { merge: true },
@@ -247,8 +293,31 @@ function normalizeWords(words) {
   return (cleaned.length ? cleaned : defaultWords).map(withAudio);
 }
 
+function normalizeProfiles(profiles, legacyStars = {}) {
+  const cleaned = Array.isArray(profiles)
+    ? profiles
+        .map((profile, index) => ({
+          id: String(profile.id || `child-${index + 1}`).trim(),
+          name: String(profile.name || `小孩 ${index + 1}`).trim(),
+          dailyStars: profile.dailyStars || {},
+        }))
+        .filter((profile) => profile.id && profile.name)
+    : [];
+
+  return cleaned.length ? cleaned : [{ ...starterProfiles[0], dailyStars: legacyStars || {} }];
+}
+
 function activeWords() {
   return state.groups[state.activeGroupIndex]?.words || defaultWords;
+}
+
+function activeProfile() {
+  let profile = state.profiles.find((item) => item.id === state.activeProfileId);
+  if (!profile) {
+    profile = state.profiles[0] || starterProfiles[0];
+    state.activeProfileId = profile.id;
+  }
+  return profile;
 }
 
 function pickWord() {
@@ -263,7 +332,9 @@ function pickWord() {
 }
 
 function getChoices(answer) {
-  const candidates = [...activeWords(), ...defaultWords]
+  const courseWords = activeWords();
+  const fallbackWords = courseWords.length >= 4 ? [] : defaultWords;
+  const candidates = [...courseWords, ...fallbackWords]
     .map(withAudio)
     .filter((word, index, list) => list.findIndex((item) => item.text === word.text) === index)
     .filter((word) => word.text !== answer.text);
@@ -398,10 +469,11 @@ function renderStats() {
   score.textContent = state.score;
   knownCount.textContent = state.score;
   practiceCount.textContent = state.practiced;
-  roundLabel.textContent = `第 ${state.practiced + 1} 題`;
-  progressFill.style.width = `${Math.min((state.practiced / 10) * 100, 100)}%`;
+  roundLabel.textContent = `第 ${Math.min(state.practiced + 1, SESSION_LENGTH)} / ${SESSION_LENGTH} 題`;
+  progressFill.style.width = `${Math.min((state.practiced / SESSION_LENGTH) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
   renderWeekGrid();
+  nextButton.textContent = state.sessionComplete ? "開始下一輪" : "下一題";
 }
 
 function renderWordList() {
@@ -423,6 +495,7 @@ function renderGroupManager() {
     button.textContent = group.name;
     button.addEventListener("click", () => {
       state.activeGroupIndex = index;
+      saveGroups();
       resetGame();
       renderGroupManager();
       renderWordList();
@@ -437,6 +510,53 @@ function renderGroupManager() {
   addGroupButton.disabled = state.groups.length >= 10;
   deleteGroupButton.disabled = state.groups.length <= 1;
   groupCount.textContent = `${state.groups.length} / 10`;
+  renderCourseSelectors();
+}
+
+function renderCourseSelectors() {
+  practiceCourseSelect.innerHTML = "";
+  state.groups.forEach((group, index) => {
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = group.name;
+    option.selected = index === state.activeGroupIndex;
+    practiceCourseSelect.append(option);
+  });
+}
+
+function renderProfileManager() {
+  profileTabs.innerHTML = "";
+  state.profiles.forEach((profile) => {
+    const button = document.createElement("button");
+    button.className = `profile-tab${profile.id === state.activeProfileId ? " active" : ""}`;
+    button.type = "button";
+    button.textContent = profile.name;
+    button.addEventListener("click", () => {
+      state.activeProfileId = profile.id;
+      saveProfiles();
+      resetGame();
+      renderProfileManager();
+      renderProfileSelectors();
+      renderWeekGrid();
+    });
+    profileTabs.append(button);
+  });
+
+  profileNameInput.value = activeProfile().name;
+  deleteProfileButton.disabled = state.profiles.length <= 1;
+}
+
+function renderProfileSelectors() {
+  [practiceProfileSelect, rewardProfileSelect].forEach((select) => {
+    select.innerHTML = "";
+    state.profiles.forEach((profile) => {
+      const option = document.createElement("option");
+      option.value = profile.id;
+      option.textContent = profile.name;
+      option.selected = profile.id === state.activeProfileId;
+      select.append(option);
+    });
+  });
 }
 
 function parseEditorWords() {
@@ -482,11 +602,65 @@ function addGroup() {
   renderWordList();
 }
 
+function saveCurrentProfile() {
+  const profile = activeProfile();
+  profile.name = profileNameInput.value.trim() || profile.name;
+  saveProfiles();
+  renderProfileManager();
+  renderProfileSelectors();
+  renderWeekGrid();
+}
+
+function addProfile() {
+  const id = `child-${Date.now()}`;
+  state.profiles.push({
+    id,
+    name: `小孩 ${state.profiles.length + 1}`,
+    dailyStars: {},
+  });
+  state.activeProfileId = id;
+  saveProfiles();
+  resetGame();
+  renderProfileManager();
+  renderProfileSelectors();
+  renderWeekGrid();
+}
+
+function deleteProfile() {
+  if (state.profiles.length <= 1) return;
+
+  const index = state.profiles.findIndex((profile) => profile.id === state.activeProfileId);
+  state.profiles.splice(index, 1);
+  state.activeProfileId = state.profiles[Math.max(0, index - 1)].id;
+  saveProfiles();
+  resetGame();
+  renderProfileManager();
+  renderProfileSelectors();
+  renderWeekGrid();
+}
+
 function deleteGroup() {
   if (state.groups.length <= 1) return;
 
   state.groups.splice(state.activeGroupIndex, 1);
   state.activeGroupIndex = Math.max(0, state.activeGroupIndex - 1);
+  saveGroups();
+  resetGame();
+  renderGroupManager();
+  renderWordList();
+}
+
+function selectProfile(profileId) {
+  state.activeProfileId = profileId;
+  saveProfiles();
+  resetGame();
+  renderProfileManager();
+  renderProfileSelectors();
+  renderWeekGrid();
+}
+
+function selectCourse(index) {
+  state.activeGroupIndex = Math.min(Math.max(Number(index), 0), state.groups.length - 1);
   saveGroups();
   resetGame();
   renderGroupManager();
@@ -501,13 +675,16 @@ function dateKey(date) {
 }
 
 function getTodayStars() {
-  return state.dailyStars[dateKey(new Date())] || 0;
+  return activeProfile().dailyStars[dateKey(new Date())] || 0;
 }
 
 function addTodayStar() {
+  if (getTodayStars() >= 3) return;
+
   const key = dateKey(new Date());
-  state.dailyStars[key] = Math.min((state.dailyStars[key] || 0) + 1, 3);
-  saveDailyStars();
+  const profile = activeProfile();
+  profile.dailyStars[key] = Math.min((profile.dailyStars[key] || 0) + 1, 3);
+  saveProfiles();
 }
 
 function getWeekStart(date) {
@@ -527,7 +704,7 @@ function renderWeekGrid() {
     const date = new Date(start);
     date.setDate(start.getDate() + index);
     const key = dateKey(date);
-    const stars = state.dailyStars[key] || 0;
+    const stars = activeProfile().dailyStars[key] || 0;
     const card = document.createElement("article");
     card.className = `day-card${stars >= 3 ? " complete" : ""}`;
     card.innerHTML = `
@@ -562,7 +739,10 @@ function handleAnswer(button, selected) {
     state.answered = true;
     state.practiced += 1;
     state.score += 1;
-    addTodayStar();
+    if (state.practiced >= SESSION_LENGTH) {
+      state.sessionComplete = true;
+      addTodayStar();
+    }
     button.classList.add("correct");
     playCorrectFeedback();
     nextButton.disabled = false;
@@ -576,6 +756,13 @@ function handleAnswer(button, selected) {
 }
 
 function nextRound() {
+  if (state.sessionComplete) {
+    state.score = 0;
+    state.practiced = 0;
+    state.recentIndexes = [];
+    state.sessionComplete = false;
+  }
+
   state.current = pickWord();
   state.answered = false;
   nextButton.disabled = true;
@@ -596,6 +783,7 @@ function setMode(mode) {
 function resetGame() {
   state.score = 0;
   state.practiced = 0;
+  state.sessionComplete = false;
   state.recentIndexes = [];
   nextRound();
 }
@@ -608,12 +796,18 @@ navButtons.forEach((button) => {
   button.addEventListener("click", () => showPage(button.dataset.page));
 });
 
+practiceCourseSelect.addEventListener("change", () => selectCourse(practiceCourseSelect.value));
+practiceProfileSelect.addEventListener("change", () => selectProfile(practiceProfileSelect.value));
+rewardProfileSelect.addEventListener("change", () => selectProfile(rewardProfileSelect.value));
 speakButton.addEventListener("click", () => playWordAudio(state.current));
 nextButton.addEventListener("click", nextRound);
 resetButton.addEventListener("click", resetGame);
 addGroupButton.addEventListener("click", addGroup);
 saveGroupButton.addEventListener("click", saveCurrentGroup);
 deleteGroupButton.addEventListener("click", deleteGroup);
+addProfileButton.addEventListener("click", addProfile);
+saveProfileButton.addEventListener("click", saveCurrentProfile);
+deleteProfileButton.addEventListener("click", deleteProfile);
 soundToggle.addEventListener("click", () => {
   state.soundOn = !state.soundOn;
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
@@ -650,6 +844,8 @@ onAuthStateChanged(auth, (user) => {
 });
 
 renderGroupManager();
+renderProfileManager();
+renderProfileSelectors();
 renderWordList();
 renderWeekGrid();
 parentDetails.open = true;

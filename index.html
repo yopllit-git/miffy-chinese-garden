@@ -36,10 +36,21 @@
         <header class="topbar">
           <div>
             <p class="eyebrow">今日任務</p>
-            <h2>拿到 3 顆星星</h2>
+            <h2>完成 20 題拿 1 顆星</h2>
           </div>
           <p class="today-stars" id="today-stars">0 / 3 ⭐</p>
         </header>
+
+        <section class="practice-controls" aria-label="練習設定">
+          <label>
+            <span>小孩</span>
+            <select id="practice-profile-select"></select>
+          </label>
+          <label>
+            <span>課程</span>
+            <select id="practice-course-select"></select>
+          </label>
+        </section>
 
         <nav class="mode-tabs" aria-label="練習模式">
           <button class="tab active" type="button" data-mode="listen">聽音選字</button>
@@ -62,7 +73,7 @@
 
         <footer class="progress-row">
           <div>
-            <p class="mini-label">星星</p>
+            <p class="mini-label">本輪答對</p>
             <p class="score" id="score">0</p>
           </div>
           <div class="progress-track" aria-label="本輪進度">
@@ -75,9 +86,15 @@
       <section class="reward-panel app-page" data-page-panel="rewards" aria-labelledby="reward-title" hidden>
         <div class="reward-hero">
           <p class="eyebrow">一週任務</p>
-          <h2 id="reward-title">每天 3 顆星星</h2>
-          <p>當天答對 3 題就完成任務。星星會存在這台裝置上。</p>
+          <h2 id="reward-title">每天最多 3 顆星星</h2>
+          <p>每完成 20 題得到 1 顆星。每個小孩的集點會分開記錄。</p>
         </div>
+        <section class="practice-controls reward-controls" aria-label="集點設定">
+          <label>
+            <span>小孩</span>
+            <select id="reward-profile-select"></select>
+          </label>
+        </section>
         <div class="week-grid" id="week-grid" aria-label="本週集點"></div>
       </section>
 
@@ -103,6 +120,29 @@
           </div>
 
           <section class="group-manager" aria-labelledby="group-title">
+            <div class="manager-card profile-card">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">小孩 Profile</p>
+                  <h2>學習記錄</h2>
+                </div>
+                <button class="small-button" id="add-profile-button" type="button">新增小孩</button>
+              </div>
+              <div class="profile-tabs" id="profile-tabs" aria-label="小孩清單"></div>
+              <label class="field-label" for="profile-name">小孩名稱</label>
+              <input
+                class="text-field"
+                id="profile-name"
+                type="text"
+                maxlength="18"
+                placeholder="例如：咪菲"
+              />
+              <div class="manager-actions compact-actions">
+                <button class="secondary-button" id="save-profile-button" type="button">儲存小孩</button>
+                <button class="ghost-button" id="delete-profile-button" type="button">刪除</button>
+              </div>
+            </div>
+
             <div class="manager-card course-card">
               <div class="section-heading">
                 <div>
