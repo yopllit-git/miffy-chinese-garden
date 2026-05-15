@@ -469,19 +469,22 @@ function ordinalText(number) {
 }
 
 function renderStartScreen() {
+  const todayComplete = getTodayStars() >= 3;
   choiceGrid.innerHTML = "";
   state.answered = false;
   state.current = null;
-  instruction.textContent = "準備好了就開始。完成 20 題可以得到 1 顆星星。";
-  roundLabel.textContent = "尚未開始";
+  instruction.textContent = todayComplete ? "" : "準備好了就開始。完成 20 題可以得到 1 顆星星。";
+  roundLabel.textContent = todayComplete ? "今日完成" : "尚未開始";
   score.textContent = state.score;
   knownCount.textContent = state.score;
   practiceCount.textContent = state.practiced;
   progressFill.style.width = `${Math.min((state.practiced / SESSION_LENGTH) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
-  celebration.hidden = true;
+  celebration.hidden = !todayComplete;
+  completionMessage.textContent = todayComplete ? "今天任務已完成！明天再來拿星星。" : "";
   startButton.hidden = false;
-  startButton.textContent = "開始練習";
+  startButton.textContent = todayComplete ? "今天任務完成" : "開始練習";
+  startButton.disabled = todayComplete;
   speakButton.hidden = true;
   nextButton.disabled = true;
   nextButton.textContent = "下一題";
