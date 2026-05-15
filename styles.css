@@ -577,17 +577,6 @@ select {
   display: none;
 }
 
-.parent-hero {
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--line);
-}
-
-.parent-hero h2 {
-  margin: 0 0 6px;
-  font-size: 1.65rem;
-  line-height: 1.15;
-}
-
 .topbar h2 {
   margin: 0;
   font-size: 1.35rem;
@@ -703,7 +692,7 @@ select {
 .group-manager {
   display: grid;
   gap: 16px;
-  margin-top: 16px;
+  margin-top: 0;
 }
 
 .manager-card {
@@ -954,7 +943,6 @@ select {
     align-items: stretch;
   }
 
-  .parent-hero,
   .manager-grid {
     grid-template-columns: 1fr;
   }
