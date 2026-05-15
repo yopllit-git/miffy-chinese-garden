@@ -23,7 +23,9 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
-const SESSION_LENGTH = 20;
+const DEFAULT_SESSION_LENGTH = 15;
+const MIN_SESSION_LENGTH = 5;
+const MAX_SESSION_LENGTH = 30;
 
 const audioByText = {
   我: "wo.wav",
@@ -85,6 +87,7 @@ const state = {
   groups: loadGroups(),
   profiles: loadProfiles(),
   activeProfileId: loadActiveProfileId(),
+  sessionLength: loadSessionLength(),
   user: null,
   cloudReady: false,
 };
@@ -95,6 +98,7 @@ const picturePrompt = document.querySelector("#picture-prompt");
 const characterPrompt = document.querySelector("#character-prompt");
 const celebration = document.querySelector("#celebration");
 const completionMessage = document.querySelector("#completion-message");
+const missionTitle = document.querySelector("#mission-title");
 const startButton = document.querySelector("#start-button");
 const speakButton = document.querySelector("#speak-button");
 const nextButton = document.querySelector("#next-button");
@@ -126,6 +130,7 @@ const addProfileButton = document.querySelector("#add-profile-button");
 const saveProfileButton = document.querySelector("#save-profile-button");
 const deleteProfileButton = document.querySelector("#delete-profile-button");
 const profileNameInput = document.querySelector("#profile-name");
+const sessionLengthInput = document.querySelector("#session-length");
 
 let audioContext;
 let currentWordAudio;
@@ -185,6 +190,22 @@ function loadActiveProfileId() {
   return localStorage.getItem("miffy-active-profile") || "miffy";
 }
 
+function clampSessionLength(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return DEFAULT_SESSION_LENGTH;
+  return Math.min(Math.max(Math.round(number), MIN_SESSION_LENGTH), MAX_SESSION_LENGTH);
+}
+
+function loadSessionLength() {
+  return clampSessionLength(localStorage.getItem("miffy-session-length") || DEFAULT_SESSION_LENGTH);
+}
+
+function saveSessionLength() {
+  state.sessionLength = clampSessionLength(state.sessionLength);
+  localStorage.setItem("miffy-session-length", String(state.sessionLength));
+  saveCloudData();
+}
+
 function saveProfiles() {
   localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
   localStorage.setItem("miffy-active-profile", state.activeProfileId);
@@ -208,6 +229,7 @@ async function loadCloudData(user) {
     state.activeGroupIndex = Math.min(data.activeGroupIndex || 0, state.groups.length - 1);
     state.profiles = normalizeProfiles(data.profiles, data.dailyStars);
     state.activeProfileId = data.activeProfileId || state.profiles[0].id;
+    state.sessionLength = clampSessionLength(data.sessionLength || state.sessionLength);
     persistLocalOnly();
   } else {
     state.cloudReady = true;
@@ -238,6 +260,7 @@ function persistLocalOnly() {
   localStorage.setItem("miffy-active-group", String(state.activeGroupIndex));
   localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
   localStorage.setItem("miffy-active-profile", state.activeProfileId);
+  localStorage.setItem("miffy-session-length", String(state.sessionLength));
 }
 
 async function saveCloudData() {
@@ -253,6 +276,7 @@ async function saveCloudData() {
       activeGroupIndex: state.activeGroupIndex,
       profiles: state.profiles,
       activeProfileId: state.activeProfileId,
+      sessionLength: state.sessionLength,
       updatedAt: serverTimestamp(),
     },
     { merge: true },
@@ -475,11 +499,13 @@ function renderStartScreen() {
   choiceGrid.innerHTML = "";
   state.answered = false;
   state.current = null;
-  instruction.textContent = todayComplete ? "" : "準備好了就開始。完成 20 題可以得到 1 顆星星。";
+  instruction.textContent = todayComplete ? "" : `準備好了就開始。完成 ${state.sessionLength} 題可以得到 1 顆星星。`;
   roundLabel.textContent = todayComplete ? "今日完成" : "尚未開始";
   score.textContent = state.score;
-  progressFill.style.width = `${Math.min((state.practiced / SESSION_LENGTH) * 100, 100)}%`;
+  progressFill.style.width = `${Math.min((state.practiced / state.sessionLength) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
+  missionTitle.textContent = `完成 ${state.sessionLength} 題拿 1 顆星`;
+  sessionLengthInput.value = state.sessionLength;
   celebration.hidden = !todayComplete;
   completionMessage.textContent = todayComplete ? "今天任務已完成！明天再來拿星星。" : "";
   startButton.hidden = todayComplete;
@@ -518,9 +544,11 @@ function renderChoices() {
 
 function renderStats() {
   score.textContent = state.score;
-  roundLabel.textContent = `第 ${Math.min(state.practiced + 1, SESSION_LENGTH)} / ${SESSION_LENGTH} 題`;
-  progressFill.style.width = `${Math.min((state.practiced / SESSION_LENGTH) * 100, 100)}%`;
+  roundLabel.textContent = `第 ${Math.min(state.practiced + 1, state.sessionLength)} / ${state.sessionLength} 題`;
+  progressFill.style.width = `${Math.min((state.practiced / state.sessionLength) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
+  missionTitle.textContent = `完成 ${state.sessionLength} 題拿 1 顆星`;
+  sessionLengthInput.value = state.sessionLength;
   renderWeekGrid();
   if (state.sessionComplete) {
     renderCompletionScreen();
@@ -708,6 +736,12 @@ function deleteGroup() {
   renderWordList();
 }
 
+function updateSessionLength() {
+  state.sessionLength = clampSessionLength(sessionLengthInput.value);
+  saveSessionLength();
+  resetGame();
+}
+
 function selectProfile(profileId) {
   state.activeProfileId = profileId;
   saveProfiles();
@@ -803,7 +837,7 @@ function handleAnswer(button, selected) {
     state.answered = true;
     state.practiced += 1;
     state.score += 1;
-    if (state.practiced >= SESSION_LENGTH) {
+    if (state.practiced >= state.sessionLength) {
       addTodayStar();
       state.sessionComplete = true;
       state.sessionStarted = false;
@@ -870,6 +904,7 @@ deleteGroupButton.addEventListener("click", deleteGroup);
 addProfileButton.addEventListener("click", addProfile);
 saveProfileButton.addEventListener("click", saveCurrentProfile);
 deleteProfileButton.addEventListener("click", deleteProfile);
+sessionLengthInput.addEventListener("change", updateSessionLength);
 soundToggle.addEventListener("click", () => {
   state.soundOn = !state.soundOn;
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
