@@ -499,6 +499,24 @@ textarea {
   padding: 18px 22px;
 }
 
+.auth-panel {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.auth-status {
+  max-width: 210px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .app-nav {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -778,8 +796,24 @@ textarea {
 
 @media (max-width: 420px) {
   .app-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: start;
     padding: 14px;
+  }
+
+  .auth-panel {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .auth-panel button {
+    flex: 1;
+  }
+
+  .auth-status {
+    max-width: none;
+    flex-basis: 100%;
   }
 
   .app-nav {

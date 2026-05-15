@@ -1,3 +1,34 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut,
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import {
+  doc,
+  getDoc,
+  getFirestore,
+  serverTimestamp,
+  setDoc,
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDjXk4wdZWOi8CxX3Quz3eJLCN89UGeCsQ",
+  authDomain: "miffy-chinese-garden.firebaseapp.com",
+  projectId: "miffy-chinese-garden",
+  storageBucket: "miffy-chinese-garden.firebasestorage.app",
+  messagingSenderId: "46399762559",
+  appId: "1:46399762559:web:5464bd10ccb9e05fbb4f4a",
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
+const googleProvider = new GoogleAuthProvider();
+
 const audioByText = {
   我: "wo.wav",
   你: "ni.wav",
@@ -46,6 +77,8 @@ const state = {
   activeGroupIndex: 0,
   groups: loadGroups(),
   dailyStars: loadDailyStars(),
+  user: null,
+  cloudReady: false,
 };
 
 const choiceGrid = document.querySelector("#choice-grid");
@@ -75,6 +108,9 @@ const wordEditor = document.querySelector("#word-editor");
 const groupCount = document.querySelector("#group-count");
 const todayStars = document.querySelector("#today-stars");
 const weekGrid = document.querySelector("#week-grid");
+const authStatus = document.querySelector("#auth-status");
+const loginButton = document.querySelector("#login-button");
+const logoutButton = document.querySelector("#logout-button");
 
 let audioContext;
 let currentWordAudio;
@@ -105,6 +141,7 @@ function loadGroups() {
 
 function saveGroups() {
   localStorage.setItem("miffy-word-groups", JSON.stringify(state.groups));
+  saveCloudData();
 }
 
 function loadDailyStars() {
@@ -117,6 +154,80 @@ function loadDailyStars() {
 
 function saveDailyStars() {
   localStorage.setItem("miffy-daily-stars", JSON.stringify(state.dailyStars));
+  saveCloudData();
+}
+
+function cloudDocRef() {
+  if (!state.user) return null;
+  return doc(db, "users", state.user.uid, "app", "miffy-chinese-garden");
+}
+
+async function loadCloudData(user) {
+  state.user = user;
+  const ref = cloudDocRef();
+  if (!ref) return;
+
+  const snapshot = await getDoc(ref);
+  if (snapshot.exists()) {
+    const data = snapshot.data();
+    state.groups = normalizeGroups(data.groups);
+    state.dailyStars = data.dailyStars || {};
+    persistLocalOnly();
+  } else {
+    state.cloudReady = true;
+    await saveCloudData();
+  }
+
+  state.cloudReady = true;
+  resetGame();
+  renderAuth();
+  renderGroupManager();
+  renderWordList();
+  renderWeekGrid();
+}
+
+function normalizeGroups(groups) {
+  if (!Array.isArray(groups) || groups.length === 0) return starterGroups;
+  return groups.slice(0, 10).map((group, index) => ({
+    name: group.name || `第 ${index + 1} 組`,
+    words: normalizeWords(group.words),
+  }));
+}
+
+function persistLocalOnly() {
+  localStorage.setItem("miffy-word-groups", JSON.stringify(state.groups));
+  localStorage.setItem("miffy-daily-stars", JSON.stringify(state.dailyStars));
+}
+
+async function saveCloudData() {
+  if (!state.user || !state.cloudReady) return;
+
+  const ref = cloudDocRef();
+  if (!ref) return;
+
+  await setDoc(
+    ref,
+    {
+      groups: state.groups,
+      dailyStars: state.dailyStars,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  ).catch((error) => {
+    console.warn("Cloud save failed", error);
+  });
+}
+
+function renderAuth() {
+  if (state.user) {
+    authStatus.textContent = state.user.email || "已登入";
+    loginButton.hidden = true;
+    logoutButton.hidden = false;
+  } else {
+    authStatus.textContent = "未登入";
+    loginButton.hidden = false;
+    logoutButton.hidden = true;
+  }
 }
 
 function normalizeWords(words) {
@@ -508,8 +619,39 @@ soundToggle.addEventListener("click", () => {
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
 });
 
+loginButton.addEventListener("click", async () => {
+  try {
+    await signInWithPopup(auth, googleProvider);
+  } catch (error) {
+    if (error.code !== "auth/popup-closed-by-user") {
+      await signInWithRedirect(auth, googleProvider);
+    }
+  }
+});
+
+logoutButton.addEventListener("click", async () => {
+  await signOut(auth);
+});
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loadCloudData(user).catch((error) => {
+      console.warn("Cloud load failed", error);
+      state.user = user;
+      state.cloudReady = false;
+      renderAuth();
+    });
+    return;
+  }
+
+  state.user = null;
+  state.cloudReady = false;
+  renderAuth();
+});
+
 renderGroupManager();
 renderWordList();
 renderWeekGrid();
 parentDetails.open = true;
+renderAuth();
 nextRound();

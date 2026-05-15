@@ -19,6 +19,11 @@
         <button class="icon-button" id="sound-toggle" type="button" aria-label="開關聲音">
           🔊
         </button>
+        <div class="auth-panel">
+          <span class="auth-status" id="auth-status">未登入</span>
+          <button class="small-button" id="login-button" type="button">Google 登入</button>
+          <button class="ghost-button" id="logout-button" type="button" hidden>登出</button>
+        </div>
       </header>
 
       <nav class="app-nav" aria-label="主要頁面">
@@ -160,6 +165,6 @@
       </section>
     </main>
 
-    <script src="./app.js"></script>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>
