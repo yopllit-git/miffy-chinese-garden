@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>咪菲認字小花園</title>
+    <meta name="theme-color" content="#3f8f69" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="咪菲認字小花園" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="learning-panel" aria-labelledby="app-title">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">普通話 · 繁體認字</p>
+            <h1 id="app-title">咪菲認字小花園</h1>
+          </div>
+          <button class="icon-button" id="sound-toggle" type="button" aria-label="開關聲音">
+            🔊
+          </button>
+        </header>
+
+        <nav class="mode-tabs" aria-label="練習模式">
+          <button class="tab active" type="button" data-mode="listen">聽音選字</button>
+          <button class="tab" type="button" data-mode="picture">看圖選詞</button>
+          <button class="tab" type="button" data-mode="match">找一樣</button>
+        </nav>
+
+        <section class="prompt-area" aria-live="polite">
+          <div class="garden-scene" id="garden-scene" aria-hidden="true">
+            <span>🌱</span>
+            <span>🌼</span>
+            <span>🍓</span>
+          </div>
+          <p class="round-label" id="round-label">第 1 題</p>
+          <div class="main-card">
+            <p class="instruction" id="instruction">聽一聽，選出你聽到的字。</p>
+            <button class="speak-button" id="speak-button" type="button">
+              <span aria-hidden="true">▶</span>
+              再聽一次
+            </button>
+            <div class="picture-prompt" id="picture-prompt" hidden></div>
+            <div class="character-prompt" id="character-prompt" hidden></div>
+          </div>
+        </section>
+
+        <section class="choice-grid" id="choice-grid" aria-label="答案選項"></section>
+
+        <footer class="progress-row">
+          <div>
+            <p class="mini-label">星星</p>
+            <p class="score" id="score">0</p>
+          </div>
+          <div class="progress-track" aria-label="本輪進度">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <button class="secondary-button" id="next-button" type="button" disabled>下一題</button>
+        </footer>
+      </section>
+
+      <aside class="parent-panel" aria-labelledby="parent-title">
+        <details class="parent-details" open>
+          <summary id="parent-title">家長小面板</summary>
+          <p class="parent-note">
+            先用 12 個入門詞測感覺。之後可以把這裡換成樂樂書每一課的字詞。
+          </p>
+          <div class="stats">
+            <div>
+              <span class="stat-number" id="known-count">0</span>
+              <span class="stat-label">答對</span>
+            </div>
+            <div>
+              <span class="stat-number" id="practice-count">0</span>
+              <span class="stat-label">已練</span>
+            </div>
+          </div>
+          <h2 class="word-heading">本輪字詞</h2>
+          <ul class="word-list" id="word-list"></ul>
+          <button class="secondary-button full" id="reset-button" type="button">重新開始</button>
+        </details>
+      </aside>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
