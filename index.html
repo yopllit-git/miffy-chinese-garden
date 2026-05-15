@@ -23,18 +23,10 @@
       <nav class="app-nav" aria-label="主要頁面">
         <button class="nav-button active" type="button" data-page="practice">練習</button>
         <button class="nav-button" type="button" data-page="rewards">本週集點</button>
-        <button class="nav-button" type="button" data-page="parent">家長</button>
+        <button class="nav-button" type="button" data-page="parent">設定</button>
       </nav>
 
       <section class="learning-panel app-page active" data-page-panel="practice" aria-labelledby="app-title">
-        <header class="topbar">
-          <div>
-            <p class="eyebrow">今日任務</p>
-            <h2>完成 20 題拿 1 顆星</h2>
-          </div>
-          <p class="today-stars" id="today-stars">0 / 3 ⭐</p>
-        </header>
-
         <section class="practice-controls" aria-label="練習設定">
           <label>
             <span>小孩</span>
@@ -45,6 +37,14 @@
             <select id="practice-course-select"></select>
           </label>
         </section>
+
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">今日任務</p>
+            <h2>完成 20 題拿 1 顆星</h2>
+          </div>
+          <p class="today-stars" id="today-stars">0 / 3 ⭐</p>
+        </header>
 
         <section class="prompt-area" aria-live="polite">
           <p class="round-label" id="round-label">第 1 題</p>
@@ -95,12 +95,12 @@
 
       <section class="parent-panel app-page" data-page-panel="parent" aria-labelledby="parent-title" hidden>
         <details class="parent-details" open>
-          <summary id="parent-title">家長管理</summary>
+          <summary id="parent-title">設定</summary>
           <div class="parent-hero">
             <div>
-              <p class="eyebrow">課程設定</p>
-              <h2>管理字詞組</h2>
-              <p class="parent-note">最多 10 組。每組可以放樂樂書一課，或一週想複習的字。</p>
+              <p class="eyebrow">設定</p>
+              <h2>小孩與課程</h2>
+              <p class="parent-note">先選小孩，再管理要練習的字詞課程。</p>
             </div>
           </div>
 
@@ -108,8 +108,8 @@
             <div class="manager-card profile-card">
               <div class="section-heading">
                 <div>
-                  <p class="eyebrow">小孩 Profile</p>
-                  <h2>學習記錄</h2>
+                  <p class="eyebrow">小孩</p>
+                  <h2>學習對象</h2>
                 </div>
                 <button class="small-button" id="add-profile-button" type="button">新增小孩</button>
               </div>
@@ -131,10 +131,10 @@
             <div class="manager-card course-card">
               <div class="section-heading">
                 <div>
-                  <p class="eyebrow">選擇課程</p>
+                  <p class="eyebrow">課程</p>
                   <h2 id="group-title">字詞組</h2>
                 </div>
-                <button class="small-button" id="add-group-button" type="button">新增</button>
+                <button class="small-button" id="add-group-button" type="button">新增課程</button>
               </div>
               <div class="group-tabs" id="group-tabs" aria-label="字詞組清單"></div>
             </div>
@@ -144,7 +144,7 @@
                 <div class="section-heading">
                   <div>
                     <p class="eyebrow">編輯</p>
-                    <h2>課程內容</h2>
+                    <h2>課程名稱與字詞</h2>
                   </div>
                   <span class="group-count" id="group-count">0 / 10</span>
                 </div>
@@ -178,7 +178,7 @@
                 <div class="section-heading">
                   <div>
                     <p class="eyebrow">預覽</p>
-                    <h2>本輪字詞</h2>
+                    <h2>目前課程</h2>
                   </div>
                   <button class="small-button" id="reset-button" type="button">重新開始</button>
                 </div>
