@@ -511,7 +511,5 @@ soundToggle.addEventListener("click", () => {
 renderGroupManager();
 renderWordList();
 renderWeekGrid();
-if (window.matchMedia("(max-width: 860px)").matches) {
-  parentDetails.open = false;
-}
+parentDetails.open = true;
 nextRound();
