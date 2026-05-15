@@ -19,3 +19,32 @@ http://localhost:5174/index.html
 ## 部署
 
 這是純靜態網站，可以直接部署到 Vercel。
+
+## Firebase
+
+正式版使用 Firebase Auth + Firestore 同步資料。
+
+Firebase Console 需要啟用：
+
+- Authentication → Sign-in method → Google
+- Firestore Database
+
+Firestore rules：
+
+```text
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+資料路徑：
+
+```text
+users/{uid}/app/miffy-chinese-garden
+```

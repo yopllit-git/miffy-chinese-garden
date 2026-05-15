@@ -1,7 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import {
+  getRedirectResult,
   getAuth,
+  GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut,
 } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
 import {
   doc,
@@ -22,6 +27,7 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
+const authProvider = new GoogleAuthProvider();
 const db = getFirestore(firebaseApp);
 const DEFAULT_SESSION_LENGTH = 15;
 const MIN_SESSION_LENGTH = 5;
@@ -90,6 +96,8 @@ const state = {
   sessionLength: loadSessionLength(),
   user: null,
   cloudReady: false,
+  authMessage: "登入後可跨手機和平板同步課程與星星。",
+  authError: false,
 };
 
 const choiceGrid = document.querySelector("#choice-grid");
@@ -129,6 +137,10 @@ const saveProfileButton = document.querySelector("#save-profile-button");
 const deleteProfileButton = document.querySelector("#delete-profile-button");
 const profileNameInput = document.querySelector("#profile-name");
 const sessionLengthInput = document.querySelector("#session-length");
+const loginButton = document.querySelector("#login-button");
+const logoutButton = document.querySelector("#logout-button");
+const authStatus = document.querySelector("#auth-status");
+const authMessage = document.querySelector("#auth-message");
 
 let audioContext;
 let currentWordAudio;
@@ -223,10 +235,12 @@ async function loadCloudData(user) {
   const snapshot = await getDoc(ref);
   if (snapshot.exists()) {
     const data = snapshot.data();
-    state.groups = normalizeGroups(data.groups);
-    state.activeGroupIndex = Math.min(data.activeGroupIndex || 0, state.groups.length - 1);
-    state.profiles = normalizeProfiles(data.profiles, data.dailyStars);
-    state.activeProfileId = data.activeProfileId || state.profiles[0].id;
+    state.groups = mergeGroups(state.groups, data.groups);
+    state.activeGroupIndex = Math.min(data.activeGroupIndex || state.activeGroupIndex || 0, state.groups.length - 1);
+    state.profiles = mergeProfiles(state.profiles, data.profiles, data.dailyStars);
+    state.activeProfileId = state.profiles.some((profile) => profile.id === state.activeProfileId)
+      ? state.activeProfileId
+      : data.activeProfileId || state.profiles[0].id;
     state.sessionLength = clampSessionLength(data.sessionLength || state.sessionLength);
     persistLocalOnly();
   } else {
@@ -235,6 +249,7 @@ async function loadCloudData(user) {
   }
 
   state.cloudReady = true;
+  await saveCloudData();
   showAuthMessage("已同步雲端");
   resetGame();
   renderAuth();
@@ -250,6 +265,47 @@ function normalizeGroups(groups) {
     name: group.name || `第 ${index + 1} 組`,
     words: normalizeWords(group.words),
   }));
+}
+
+function groupSignature(group) {
+  return `${group.name}:${group.words.map((word) => word.text).join("|")}`;
+}
+
+function mergeGroups(localGroups, cloudGroups) {
+  const merged = normalizeGroups(cloudGroups);
+  const signatures = new Set(merged.map(groupSignature));
+
+  normalizeGroups(localGroups).forEach((group) => {
+    const signature = groupSignature(group);
+    if (signatures.has(signature) || merged.length >= 10) return;
+    signatures.add(signature);
+    merged.push(group);
+  });
+
+  return merged;
+}
+
+function mergeDailyStars(localStars = {}, cloudStars = {}) {
+  const merged = { ...cloudStars };
+  Object.entries(localStars).forEach(([key, value]) => {
+    merged[key] = Math.max(Number(value) || 0, Number(merged[key]) || 0);
+  });
+  return merged;
+}
+
+function mergeProfiles(localProfiles, cloudProfiles, legacyStars = {}) {
+  const merged = normalizeProfiles(cloudProfiles, legacyStars);
+
+  normalizeProfiles(localProfiles).forEach((localProfile) => {
+    const existing = merged.find((profile) => profile.id === localProfile.id);
+    if (!existing) {
+      merged.push(localProfile);
+      return;
+    }
+    existing.dailyStars = mergeDailyStars(localProfile.dailyStars, existing.dailyStars);
+  });
+
+  return merged;
 }
 
 function persistLocalOnly() {
@@ -282,11 +338,43 @@ async function saveCloudData() {
   });
 }
 
+async function signInWithGoogle() {
+  showAuthMessage("正在開啟 Google 登入...");
+  try {
+    await signInWithPopup(auth, authProvider);
+  } catch (error) {
+    const code = error?.code || "";
+    if (code.includes("popup-blocked") || code.includes("popup-closed-by-user")) {
+      showAuthMessage("正在改用跳轉登入...");
+      await signInWithRedirect(auth, authProvider);
+      return;
+    }
+    showAuthMessage(friendlyAuthError(error), true);
+  }
+}
+
+async function signOutUser() {
+  await signOut(auth);
+  state.user = null;
+  state.cloudReady = false;
+  showAuthMessage("已登出。這台裝置仍會保留目前資料。");
+}
+
 function renderAuth() {
-  return;
+  if (!authStatus || !authMessage) return;
+
+  const isSignedIn = Boolean(state.user);
+  authStatus.textContent = isSignedIn ? `已登入：${state.user.displayName || state.user.email || "Google 帳號"}` : "未登入";
+  authMessage.textContent = state.authMessage;
+  authMessage.classList.toggle("error", state.authError);
+  loginButton.hidden = isSignedIn;
+  logoutButton.hidden = !isSignedIn;
 }
 
 function showAuthMessage(message, isError = false) {
+  state.authMessage = message;
+  state.authError = isError;
+  renderAuth();
   console[isError ? "warn" : "info"](message);
 }
 
@@ -501,7 +589,7 @@ function renderStartScreen() {
   score.textContent = state.score;
   progressFill.style.width = `${Math.min((state.practiced / state.sessionLength) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
-  missionTitle.textContent = `完成 ${state.sessionLength} 題拿 1 顆星`;
+  missionTitle.textContent = `完成 ${state.sessionLength} 題`;
   sessionLengthInput.value = state.sessionLength;
   celebration.hidden = !todayComplete;
   completionMessage.textContent = todayComplete ? "今天任務已完成！明天再來拿星星。" : "";
@@ -544,7 +632,7 @@ function renderStats() {
   roundLabel.textContent = `第 ${Math.min(state.practiced + 1, state.sessionLength)} / ${state.sessionLength} 題`;
   progressFill.style.width = `${Math.min((state.practiced / state.sessionLength) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
-  missionTitle.textContent = `完成 ${state.sessionLength} 題拿 1 顆星`;
+  missionTitle.textContent = `完成 ${state.sessionLength} 題`;
   sessionLengthInput.value = state.sessionLength;
   renderWeekGrid();
   if (state.sessionComplete) {
@@ -887,6 +975,8 @@ addProfileButton.addEventListener("click", addProfile);
 saveProfileButton.addEventListener("click", saveCurrentProfile);
 deleteProfileButton.addEventListener("click", deleteProfile);
 sessionLengthInput.addEventListener("change", updateSessionLength);
+loginButton.addEventListener("click", signInWithGoogle);
+logoutButton.addEventListener("click", signOutUser);
 soundToggle.addEventListener("click", () => {
   state.soundOn = !state.soundOn;
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
@@ -907,7 +997,12 @@ onAuthStateChanged(auth, (user) => {
 
   state.user = null;
   state.cloudReady = false;
+  showAuthMessage("未登入。登入後可跨手機和平板同步課程與星星。");
   renderAuth();
+});
+
+getRedirectResult(auth).catch((error) => {
+  showAuthMessage(friendlyAuthError(error), true);
 });
 
 renderGroupManager();

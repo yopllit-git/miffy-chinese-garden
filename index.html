@@ -7,6 +7,9 @@
     <meta name="theme-color" content="#3f8f69" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="咪菲認字小花園" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/app-icon-192.png" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="manifest" href="./manifest.json" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -46,9 +49,8 @@
 
         <header class="topbar mission-card">
           <div>
-            <p class="eyebrow">今日任務</p>
-            <h2 id="mission-title">完成 15 題拿 1 顆星</h2>
-            <p class="mission-note">一天最多 3 顆星，完成後就可以休息。</p>
+            <h2 id="mission-title">完成 15 題</h2>
+            <p class="mission-note">可以得到 1 顆星。一天最多 3 顆星。</p>
           </div>
           <p class="today-stars" id="today-stars">0 / 3 ⭐</p>
         </header>
@@ -103,6 +105,21 @@
         <details class="parent-details" open>
           <summary id="parent-title">設定</summary>
           <section class="group-manager" aria-labelledby="group-title">
+            <div class="manager-card sync-card">
+              <div class="section-heading">
+                <div>
+                  <h2>資料同步</h2>
+                  <p class="eyebrow">Firebase</p>
+                </div>
+                <p class="auth-status" id="auth-status">未登入</p>
+              </div>
+              <p class="auth-message" id="auth-message">登入後可跨手機和平板同步課程與星星。</p>
+              <div class="manager-actions">
+                <button class="secondary-button" id="login-button" type="button">Google 登入</button>
+                <button class="ghost-button" id="logout-button" type="button" hidden>登出</button>
+              </div>
+            </div>
+
             <div class="manager-card profile-card">
               <div class="section-heading step-heading">
                 <span class="step-number">1</span>
