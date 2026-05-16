@@ -20,31 +20,6 @@ http://localhost:5174/index.html
 
 這是純靜態網站，可以直接部署到 Vercel。
 
-## Firebase
+## 資料儲存
 
-正式版使用 Firebase Auth + Firestore 同步資料。
-
-Firebase Console 需要啟用：
-
-- Authentication → Sign-in method → Google
-- Firestore Database
-
-Firestore rules：
-
-```text
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
-
-資料路徑：
-
-```text
-users/{uid}/app/miffy-chinese-garden
-```
+目前資料存在同一台裝置的瀏覽器 localStorage。小孩、課程、星星和每次練習題數都會保留在該瀏覽器中。

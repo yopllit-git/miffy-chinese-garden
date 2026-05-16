@@ -1,34 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-import {
-  getRedirectResult,
-  getAuth,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signInWithPopup,
-  signInWithRedirect,
-  signOut,
-} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-import {
-  doc,
-  getDoc,
-  getFirestore,
-  serverTimestamp,
-  setDoc,
-} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDjXk4wdZWOi8CxX3Quz3eJLCN89UGeCsQ",
-  authDomain: "miffy-chinese-garden.firebaseapp.com",
-  projectId: "miffy-chinese-garden",
-  storageBucket: "miffy-chinese-garden.firebasestorage.app",
-  messagingSenderId: "46399762559",
-  appId: "1:46399762559:web:5464bd10ccb9e05fbb4f4a",
-};
-
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const authProvider = new GoogleAuthProvider();
-const db = getFirestore(firebaseApp);
 const DEFAULT_SESSION_LENGTH = 15;
 const MIN_SESSION_LENGTH = 5;
 const MAX_SESSION_LENGTH = 30;
@@ -94,10 +63,6 @@ const state = {
   profiles: loadProfiles(),
   activeProfileId: loadActiveProfileId(),
   sessionLength: loadSessionLength(),
-  user: null,
-  cloudReady: false,
-  authMessage: "登入後可跨手機和平板同步課程與星星。",
-  authError: false,
 };
 
 const choiceGrid = document.querySelector("#choice-grid");
@@ -137,10 +102,6 @@ const saveProfileButton = document.querySelector("#save-profile-button");
 const deleteProfileButton = document.querySelector("#delete-profile-button");
 const profileNameInput = document.querySelector("#profile-name");
 const sessionLengthInput = document.querySelector("#session-length");
-const loginButton = document.querySelector("#login-button");
-const logoutButton = document.querySelector("#logout-button");
-const authStatus = document.querySelector("#auth-status");
-const authMessage = document.querySelector("#auth-message");
 
 let audioContext;
 let currentWordAudio;
@@ -176,7 +137,7 @@ function saveGroups() {
   state.groups = profile.groups;
   state.activeGroupIndex = profile.activeGroupIndex;
   persistLocalOnly();
-  saveCloudData();
+  saveLocalData();
 }
 
 function loadActiveGroupIndex() {
@@ -217,7 +178,7 @@ function loadSessionLength() {
 function saveSessionLength() {
   state.sessionLength = clampSessionLength(state.sessionLength);
   localStorage.setItem("miffy-session-length", String(state.sessionLength));
-  saveCloudData();
+  saveLocalData();
 }
 
 function saveProfiles() {
@@ -226,45 +187,11 @@ function saveProfiles() {
   profile.activeGroupIndex = activeGroupIndex();
   localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
   localStorage.setItem("miffy-active-profile", state.activeProfileId);
-  saveCloudData();
+  saveLocalData();
 }
 
-function cloudDocRef() {
-  if (!state.user) return null;
-  return doc(db, "users", state.user.uid, "app", "miffy-chinese-garden");
-}
-
-async function loadCloudData(user) {
-  state.user = user;
-  const ref = cloudDocRef();
-  if (!ref) return;
-
-  const snapshot = await getDoc(ref);
-  if (snapshot.exists()) {
-    const data = snapshot.data();
-    const fallbackGroups = mergeGroups(state.groups, data.groups);
-    state.profiles = mergeProfiles(state.profiles, data.profiles, data.dailyStars, fallbackGroups);
-    state.activeProfileId = state.profiles.some((profile) => profile.id === state.activeProfileId)
-      ? state.activeProfileId
-      : data.activeProfileId || state.profiles[0].id;
-    state.groups = activeGroups();
-    state.activeGroupIndex = activeGroupIndex();
-    state.sessionLength = clampSessionLength(data.sessionLength || state.sessionLength);
-    persistLocalOnly();
-  } else {
-    state.cloudReady = true;
-    await saveCloudData();
-  }
-
-  state.cloudReady = true;
-  await saveCloudData();
-  showAuthMessage("已同步雲端");
-  resetGame();
-  renderAuth();
-  renderGroupManager();
-  renderProfileManager();
-  renderProfileSelectors();
-  renderWeekGrid();
+function saveLocalData() {
+  persistLocalOnly();
 }
 
 function normalizeGroups(groups) {
@@ -279,45 +206,6 @@ function groupSignature(group) {
   return `${group.name}:${group.words.map((word) => word.text).join("|")}`;
 }
 
-function mergeGroups(localGroups, cloudGroups) {
-  const merged = normalizeGroups(cloudGroups);
-  const signatures = new Set(merged.map(groupSignature));
-
-  normalizeGroups(localGroups).forEach((group) => {
-    const signature = groupSignature(group);
-    if (signatures.has(signature) || merged.length >= 10) return;
-    signatures.add(signature);
-    merged.push(group);
-  });
-
-  return merged;
-}
-
-function mergeDailyStars(localStars = {}, cloudStars = {}) {
-  const merged = { ...cloudStars };
-  Object.entries(localStars).forEach(([key, value]) => {
-    merged[key] = Math.max(Number(value) || 0, Number(merged[key]) || 0);
-  });
-  return merged;
-}
-
-function mergeProfiles(localProfiles, cloudProfiles, legacyStars = {}, fallbackGroups = null) {
-  const merged = normalizeProfiles(cloudProfiles, legacyStars, fallbackGroups);
-
-  normalizeProfiles(localProfiles, {}, fallbackGroups).forEach((localProfile) => {
-    const existing = merged.find((profile) => profile.id === localProfile.id);
-    if (!existing) {
-      merged.push(localProfile);
-      return;
-    }
-    existing.dailyStars = mergeDailyStars(localProfile.dailyStars, existing.dailyStars);
-    existing.groups = mergeGroups(localProfile.groups, existing.groups);
-    existing.activeGroupIndex = Math.min(existing.activeGroupIndex || 0, existing.groups.length - 1);
-  });
-
-  return merged;
-}
-
 function persistLocalOnly() {
   state.groups = activeGroups();
   state.activeGroupIndex = activeGroupIndex();
@@ -326,88 +214,6 @@ function persistLocalOnly() {
   localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
   localStorage.setItem("miffy-active-profile", state.activeProfileId);
   localStorage.setItem("miffy-session-length", String(state.sessionLength));
-}
-
-async function saveCloudData() {
-  if (!state.user || !state.cloudReady) return;
-
-  const ref = cloudDocRef();
-  if (!ref) return;
-
-  state.groups = activeGroups();
-  state.activeGroupIndex = activeGroupIndex();
-
-  await setDoc(
-    ref,
-    {
-      groups: state.groups,
-      activeGroupIndex: state.activeGroupIndex,
-      profiles: state.profiles,
-      activeProfileId: state.activeProfileId,
-      sessionLength: state.sessionLength,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true },
-  ).catch((error) => {
-    console.warn("Cloud save failed", error);
-  });
-}
-
-async function signInWithGoogle() {
-  showAuthMessage("正在開啟 Google 登入...");
-  try {
-    await signInWithPopup(auth, authProvider);
-  } catch (error) {
-    const code = error?.code || "";
-    if (code.includes("popup-blocked") || code.includes("popup-closed-by-user")) {
-      showAuthMessage("正在改用跳轉登入...");
-      await signInWithRedirect(auth, authProvider);
-      return;
-    }
-    showAuthMessage(friendlyAuthError(error), true);
-  }
-}
-
-async function signOutUser() {
-  await signOut(auth);
-  state.user = null;
-  state.cloudReady = false;
-  showAuthMessage("已登出。這台裝置仍會保留目前資料。");
-}
-
-function renderAuth() {
-  if (!authStatus || !authMessage) return;
-
-  const isSignedIn = Boolean(state.user);
-  authStatus.textContent = isSignedIn ? `已登入：${state.user.displayName || state.user.email || "Google 帳號"}` : "未登入";
-  authMessage.textContent = state.authMessage;
-  authMessage.classList.toggle("error", state.authError);
-  loginButton.hidden = isSignedIn;
-  logoutButton.hidden = !isSignedIn;
-}
-
-function showAuthMessage(message, isError = false) {
-  state.authMessage = message;
-  state.authError = isError;
-  renderAuth();
-  console[isError ? "warn" : "info"](message);
-}
-
-function friendlyAuthError(error) {
-  const code = error?.code || "";
-  if (code.includes("unauthorized-domain")) {
-    return "這個網址還沒加入 Firebase Authorized domains。";
-  }
-  if (code.includes("operation-not-allowed")) {
-    return "Firebase 還沒啟用 Google 登入。";
-  }
-  if (code.includes("popup-blocked")) {
-    return "瀏覽器擋住登入視窗，正在改用跳轉登入。";
-  }
-  if (code.includes("permission-denied")) {
-    return "Firestore 權限規則還沒允許這個帳號存取資料。";
-  }
-  return `登入/同步失敗：${code || error?.message || "未知錯誤"}`;
 }
 
 function normalizeWords(words) {
@@ -1035,34 +841,9 @@ addProfileButton.addEventListener("click", addProfile);
 saveProfileButton.addEventListener("click", saveCurrentProfile);
 deleteProfileButton.addEventListener("click", deleteProfile);
 sessionLengthInput.addEventListener("change", updateSessionLength);
-loginButton.addEventListener("click", signInWithGoogle);
-logoutButton.addEventListener("click", signOutUser);
 soundToggle.addEventListener("click", () => {
   state.soundOn = !state.soundOn;
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
-});
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    showAuthMessage("已登入，正在同步資料...");
-    loadCloudData(user).catch((error) => {
-      console.warn("Cloud load failed", error);
-      state.user = user;
-      state.cloudReady = false;
-      showAuthMessage(friendlyAuthError(error), true);
-      renderAuth();
-    });
-    return;
-  }
-
-  state.user = null;
-  state.cloudReady = false;
-  showAuthMessage("未登入。登入後可跨手機和平板同步課程與星星。");
-  renderAuth();
-});
-
-getRedirectResult(auth).catch((error) => {
-  showAuthMessage(friendlyAuthError(error), true);
 });
 
 renderGroupManager();
@@ -1070,5 +851,4 @@ renderProfileManager();
 renderProfileSelectors();
 renderWeekGrid();
 parentDetails.open = true;
-renderAuth();
 renderStats();

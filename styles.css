@@ -488,37 +488,6 @@ select {
   padding: 18px 22px;
 }
 
-.auth-panel {
-  display: flex;
-  align-items: center;
-  justify-content: end;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.auth-status {
-  margin: 0;
-  max-width: 210px;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 800;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.auth-message {
-  margin: 12px 0;
-  color: var(--muted);
-  font-size: 0.78rem;
-  line-height: 1.35;
-}
-
-.auth-message.error {
-  color: #b23b2f;
-  font-weight: 800;
-}
-
 .app-nav {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -934,24 +903,6 @@ select {
     grid-template-columns: 1fr auto;
     align-items: start;
     padding: 14px;
-  }
-
-  .auth-panel {
-    grid-column: 1 / -1;
-    justify-content: stretch;
-  }
-
-  .auth-panel button {
-    flex: 1;
-  }
-
-  .auth-status {
-    max-width: none;
-    flex-basis: 100%;
-  }
-
-  .auth-message {
-    text-align: left;
   }
 
   .app-nav {
