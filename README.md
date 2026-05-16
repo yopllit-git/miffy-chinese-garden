@@ -22,4 +22,18 @@ http://localhost:5174/index.html
 
 ## 資料儲存
 
-目前資料存在同一台裝置的瀏覽器 localStorage。小孩、課程、星星和每次練習題數都會保留在該瀏覽器中。
+目前資料會存在 Firebase Firestore，並保留 localStorage 作為本機備份。App 不需要登入，開啟後會自動同步。
+
+Firestore rules 可以先使用：
+
+```text
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /families/miffy-chinese-garden {
+      allow read, write: if true;
+    }
+  }
+}
+```

@@ -1,3 +1,24 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import {
+  doc,
+  getDoc,
+  getFirestore,
+  serverTimestamp,
+  setDoc,
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDjXk4wdZWOi8CxX3Quz3eJLCN89UGeCsQ",
+  authDomain: "miffy-chinese-garden.firebaseapp.com",
+  projectId: "miffy-chinese-garden",
+  storageBucket: "miffy-chinese-garden.firebasestorage.app",
+  messagingSenderId: "46399762559",
+  appId: "1:46399762559:web:5464bd10ccb9e05fbb4f4a",
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+const cloudDocRef = doc(db, "families", "miffy-chinese-garden");
 const DEFAULT_SESSION_LENGTH = 15;
 const MIN_SESSION_LENGTH = 5;
 const MAX_SESSION_LENGTH = 30;
@@ -63,6 +84,8 @@ const state = {
   profiles: loadProfiles(),
   activeProfileId: loadActiveProfileId(),
   sessionLength: loadSessionLength(),
+  cloudReady: false,
+  cloudLoading: true,
 };
 
 const choiceGrid = document.querySelector("#choice-grid");
@@ -198,6 +221,7 @@ function saveProfiles() {
 
 function saveLocalData() {
   persistLocalOnly();
+  saveCloudData();
 }
 
 function normalizeGroups(groups) {
@@ -212,6 +236,46 @@ function groupSignature(group) {
   return `${group.name}:${group.words.map((word) => word.text).join("|")}`;
 }
 
+function mergeGroups(localGroups, cloudGroups) {
+  const merged = normalizeGroups(cloudGroups);
+  const signatures = new Set(merged.map(groupSignature));
+
+  normalizeGroups(localGroups).forEach((group) => {
+    const signature = groupSignature(group);
+    if (signatures.has(signature) || merged.length >= 10) return;
+    signatures.add(signature);
+    merged.push(group);
+  });
+
+  return merged;
+}
+
+function mergeDailyStars(localStars = {}, cloudStars = {}) {
+  const merged = { ...cloudStars };
+  Object.entries(localStars).forEach(([key, value]) => {
+    merged[key] = Math.max(Number(value) || 0, Number(merged[key]) || 0);
+  });
+  return merged;
+}
+
+function mergeProfiles(localProfiles, cloudProfiles, legacyStars = {}, fallbackGroups = null) {
+  const merged = normalizeProfiles(cloudProfiles, legacyStars, fallbackGroups);
+
+  normalizeProfiles(localProfiles, {}, fallbackGroups).forEach((localProfile) => {
+    const existing = merged.find((profile) => profile.id === localProfile.id);
+    if (!existing) {
+      merged.push(localProfile);
+      return;
+    }
+    existing.dailyStars = mergeDailyStars(localProfile.dailyStars, existing.dailyStars);
+    existing.groups = mergeGroups(localProfile.groups, existing.groups);
+    existing.sessionLength = clampSessionLength(localProfile.sessionLength || existing.sessionLength);
+    existing.activeGroupIndex = Math.min(existing.activeGroupIndex || 0, existing.groups.length - 1);
+  });
+
+  return merged;
+}
+
 function persistLocalOnly() {
   state.groups = activeGroups();
   state.activeGroupIndex = activeGroupIndex();
@@ -221,6 +285,60 @@ function persistLocalOnly() {
   localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
   localStorage.setItem("miffy-active-profile", state.activeProfileId);
   localStorage.setItem("miffy-session-length", String(state.sessionLength));
+}
+
+async function loadCloudData() {
+  try {
+    const snapshot = await getDoc(cloudDocRef);
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      const fallbackGroups = mergeGroups(state.groups, data.groups);
+      state.profiles = mergeProfiles(state.profiles, data.profiles, data.dailyStars, fallbackGroups);
+      state.activeProfileId = state.profiles.some((profile) => profile.id === state.activeProfileId)
+        ? state.activeProfileId
+        : data.activeProfileId || state.profiles[0].id;
+      state.groups = activeGroups();
+      state.activeGroupIndex = activeGroupIndex();
+      state.sessionLength = activeSessionLength();
+      persistLocalOnly();
+    }
+
+    state.cloudReady = true;
+    state.cloudLoading = false;
+    await saveCloudData();
+    resetGame();
+    renderGroupManager();
+    renderProfileManager();
+    renderProfileSelectors();
+    renderWeekGrid();
+  } catch (error) {
+    state.cloudReady = false;
+    state.cloudLoading = false;
+    console.warn("Cloud load failed", error);
+  }
+}
+
+async function saveCloudData() {
+  if (!state.cloudReady) return;
+
+  state.groups = activeGroups();
+  state.activeGroupIndex = activeGroupIndex();
+  state.sessionLength = activeSessionLength();
+
+  await setDoc(
+    cloudDocRef,
+    {
+      groups: state.groups,
+      activeGroupIndex: state.activeGroupIndex,
+      profiles: state.profiles,
+      activeProfileId: state.activeProfileId,
+      sessionLength: state.sessionLength,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  ).catch((error) => {
+    console.warn("Cloud save failed", error);
+  });
 }
 
 function normalizeWords(words) {
@@ -881,3 +999,4 @@ renderProfileSelectors();
 renderWeekGrid();
 parentDetails.open = true;
 renderStats();
+loadCloudData();
