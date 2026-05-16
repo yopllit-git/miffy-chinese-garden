@@ -170,8 +170,12 @@ function loadGroups() {
 }
 
 function saveGroups() {
-  localStorage.setItem("miffy-word-groups", JSON.stringify(state.groups));
-  localStorage.setItem("miffy-active-group", String(state.activeGroupIndex));
+  const profile = activeProfile();
+  profile.groups = activeGroups();
+  profile.activeGroupIndex = activeGroupIndex();
+  state.groups = profile.groups;
+  state.activeGroupIndex = profile.activeGroupIndex;
+  persistLocalOnly();
   saveCloudData();
 }
 
@@ -183,7 +187,7 @@ function loadActiveGroupIndex() {
 function loadProfiles() {
   try {
     const stored = JSON.parse(localStorage.getItem("miffy-profiles"));
-    if (Array.isArray(stored) && stored.length) return normalizeProfiles(stored);
+    if (Array.isArray(stored) && stored.length) return normalizeProfiles(stored, {}, loadGroups());
   } catch {
   }
 
@@ -193,7 +197,7 @@ function loadProfiles() {
   } catch {
     legacyStars = {};
   }
-  return [{ ...starterProfiles[0], dailyStars: legacyStars || {} }];
+  return normalizeProfiles([{ ...starterProfiles[0], dailyStars: legacyStars || {} }], {}, loadGroups());
 }
 
 function loadActiveProfileId() {
@@ -217,6 +221,9 @@ function saveSessionLength() {
 }
 
 function saveProfiles() {
+  const profile = activeProfile();
+  profile.groups = activeGroups();
+  profile.activeGroupIndex = activeGroupIndex();
   localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
   localStorage.setItem("miffy-active-profile", state.activeProfileId);
   saveCloudData();
@@ -235,12 +242,13 @@ async function loadCloudData(user) {
   const snapshot = await getDoc(ref);
   if (snapshot.exists()) {
     const data = snapshot.data();
-    state.groups = mergeGroups(state.groups, data.groups);
-    state.activeGroupIndex = Math.min(data.activeGroupIndex || state.activeGroupIndex || 0, state.groups.length - 1);
-    state.profiles = mergeProfiles(state.profiles, data.profiles, data.dailyStars);
+    const fallbackGroups = mergeGroups(state.groups, data.groups);
+    state.profiles = mergeProfiles(state.profiles, data.profiles, data.dailyStars, fallbackGroups);
     state.activeProfileId = state.profiles.some((profile) => profile.id === state.activeProfileId)
       ? state.activeProfileId
       : data.activeProfileId || state.profiles[0].id;
+    state.groups = activeGroups();
+    state.activeGroupIndex = activeGroupIndex();
     state.sessionLength = clampSessionLength(data.sessionLength || state.sessionLength);
     persistLocalOnly();
   } else {
@@ -293,22 +301,26 @@ function mergeDailyStars(localStars = {}, cloudStars = {}) {
   return merged;
 }
 
-function mergeProfiles(localProfiles, cloudProfiles, legacyStars = {}) {
-  const merged = normalizeProfiles(cloudProfiles, legacyStars);
+function mergeProfiles(localProfiles, cloudProfiles, legacyStars = {}, fallbackGroups = null) {
+  const merged = normalizeProfiles(cloudProfiles, legacyStars, fallbackGroups);
 
-  normalizeProfiles(localProfiles).forEach((localProfile) => {
+  normalizeProfiles(localProfiles, {}, fallbackGroups).forEach((localProfile) => {
     const existing = merged.find((profile) => profile.id === localProfile.id);
     if (!existing) {
       merged.push(localProfile);
       return;
     }
     existing.dailyStars = mergeDailyStars(localProfile.dailyStars, existing.dailyStars);
+    existing.groups = mergeGroups(localProfile.groups, existing.groups);
+    existing.activeGroupIndex = Math.min(existing.activeGroupIndex || 0, existing.groups.length - 1);
   });
 
   return merged;
 }
 
 function persistLocalOnly() {
+  state.groups = activeGroups();
+  state.activeGroupIndex = activeGroupIndex();
   localStorage.setItem("miffy-word-groups", JSON.stringify(state.groups));
   localStorage.setItem("miffy-active-group", String(state.activeGroupIndex));
   localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
@@ -321,6 +333,9 @@ async function saveCloudData() {
 
   const ref = cloudDocRef();
   if (!ref) return;
+
+  state.groups = activeGroups();
+  state.activeGroupIndex = activeGroupIndex();
 
   await setDoc(
     ref,
@@ -412,22 +427,35 @@ function normalizeWords(words) {
   return (cleaned.length ? cleaned : defaultWords).map(withAudio);
 }
 
-function normalizeProfiles(profiles, legacyStars = {}) {
+function normalizeProfiles(profiles, legacyStars = {}, fallbackGroups = null) {
   const cleaned = Array.isArray(profiles)
     ? profiles
-        .map((profile, index) => ({
-          id: String(profile.id || `child-${index + 1}`).trim(),
-          name: String(profile.name || `小孩 ${index + 1}`).trim(),
-          dailyStars: profile.dailyStars || {},
-        }))
+        .map((profile, index) => {
+          const groups = normalizeGroups(profile.groups || fallbackGroups || starterGroups);
+          return {
+            id: String(profile.id || `child-${index + 1}`).trim(),
+            name: String(profile.name || `小孩 ${index + 1}`).trim(),
+            dailyStars: profile.dailyStars || {},
+            groups,
+            activeGroupIndex: Math.min(Math.max(Number(profile.activeGroupIndex) || 0, 0), groups.length - 1),
+          };
+        })
         .filter((profile) => profile.id && profile.name)
     : [];
 
-  return cleaned.length ? cleaned : [{ ...starterProfiles[0], dailyStars: legacyStars || {} }];
+  if (cleaned.length) return cleaned;
+
+  const groups = normalizeGroups(fallbackGroups || starterGroups);
+  return [{
+    ...starterProfiles[0],
+    dailyStars: legacyStars || {},
+    groups,
+    activeGroupIndex: 0,
+  }];
 }
 
 function activeWords() {
-  return state.groups[state.activeGroupIndex]?.words || defaultWords;
+  return activeGroups()[activeGroupIndex()]?.words || defaultWords;
 }
 
 function activeProfile() {
@@ -436,7 +464,23 @@ function activeProfile() {
     profile = state.profiles[0] || starterProfiles[0];
     state.activeProfileId = profile.id;
   }
+  if (!profile.groups) profile.groups = normalizeGroups(state.groups || starterGroups);
+  profile.activeGroupIndex = Math.min(Math.max(Number(profile.activeGroupIndex) || 0, 0), profile.groups.length - 1);
   return profile;
+}
+
+function activeGroups() {
+  return activeProfile().groups;
+}
+
+function activeGroupIndex() {
+  return activeProfile().activeGroupIndex || 0;
+}
+
+function setActiveGroupIndex(index) {
+  const profile = activeProfile();
+  profile.activeGroupIndex = Math.min(Math.max(Number(index), 0), activeGroups().length - 1);
+  state.activeGroupIndex = profile.activeGroupIndex;
 }
 
 function pickWord() {
@@ -645,14 +689,16 @@ function renderStats() {
 }
 
 function renderGroupManager() {
+  const groups = activeGroups();
+  const index = activeGroupIndex();
   groupTabs.innerHTML = "";
-  state.groups.forEach((group, index) => {
+  groups.forEach((group, groupIndex) => {
     const button = document.createElement("button");
-    button.className = `group-tab${index === state.activeGroupIndex ? " active" : ""}`;
+    button.className = `group-tab${groupIndex === index ? " active" : ""}`;
     button.type = "button";
     button.textContent = group.name;
     button.addEventListener("click", () => {
-      state.activeGroupIndex = index;
+      setActiveGroupIndex(groupIndex);
       saveGroups();
       resetGame();
       renderGroupManager();
@@ -660,23 +706,25 @@ function renderGroupManager() {
     groupTabs.append(button);
   });
 
-  const activeGroup = state.groups[state.activeGroupIndex];
+  const activeGroup = groups[index];
   groupNameInput.value = activeGroup.name;
   wordEditor.value = activeGroup.words.map((word) => word.text).join("\n");
 
-  addGroupButton.disabled = state.groups.length >= 10;
-  deleteGroupButton.disabled = state.groups.length <= 1;
-  groupCount.textContent = `${state.groups.length} / 10`;
+  addGroupButton.disabled = groups.length >= 10;
+  deleteGroupButton.disabled = groups.length <= 1;
+  groupCount.textContent = `${groups.length} / 10`;
   renderCourseSelectors();
 }
 
 function renderCourseSelectors() {
+  const groups = activeGroups();
+  const index = activeGroupIndex();
   practiceCourseSelect.innerHTML = "";
-  state.groups.forEach((group, index) => {
+  groups.forEach((group, groupIndex) => {
     const option = document.createElement("option");
-    option.value = String(index);
+    option.value = String(groupIndex);
     option.textContent = group.name;
-    option.selected = index === state.activeGroupIndex;
+    option.selected = groupIndex === index;
     practiceCourseSelect.append(option);
   });
 }
@@ -695,6 +743,7 @@ function renderProfileManager() {
       renderProfileManager();
       renderProfileSelectors();
       renderWeekGrid();
+      renderGroupManager();
     });
     profileTabs.append(button);
   });
@@ -735,8 +784,9 @@ function saveCurrentGroup() {
   const words = parseEditorWords();
   if (!words.length) return;
 
-  state.groups[state.activeGroupIndex] = {
-    name: groupNameInput.value.trim() || `第 ${state.activeGroupIndex + 1} 組`,
+  const groups = activeGroups();
+  groups[activeGroupIndex()] = {
+    name: groupNameInput.value.trim() || `第 ${activeGroupIndex() + 1} 組`,
     words,
   };
   saveGroups();
@@ -745,13 +795,14 @@ function saveCurrentGroup() {
 }
 
 function addGroup() {
-  if (state.groups.length >= 10) return;
+  const groups = activeGroups();
+  if (groups.length >= 10) return;
 
-  state.groups.push({
-    name: `第 ${state.groups.length + 1} 組`,
+  groups.push({
+    name: `第 ${groups.length + 1} 組`,
     words: [withAudio({ text: "新字", meaning: "新字", emoji: "🌟" })],
   });
-  state.activeGroupIndex = state.groups.length - 1;
+  setActiveGroupIndex(groups.length - 1);
   saveGroups();
   resetGame();
   renderGroupManager();
@@ -764,6 +815,7 @@ function saveCurrentProfile() {
   renderProfileManager();
   renderProfileSelectors();
   renderWeekGrid();
+  renderGroupManager();
 }
 
 function addProfile() {
@@ -772,6 +824,8 @@ function addProfile() {
     id,
     name: `小孩 ${state.profiles.length + 1}`,
     dailyStars: {},
+    groups: normalizeGroups(starterGroups),
+    activeGroupIndex: 0,
   });
   state.activeProfileId = id;
   saveProfiles();
@@ -779,6 +833,7 @@ function addProfile() {
   renderProfileManager();
   renderProfileSelectors();
   renderWeekGrid();
+  renderGroupManager();
 }
 
 function deleteProfile() {
@@ -799,10 +854,12 @@ function deleteProfile() {
 }
 
 function deleteGroup() {
-  if (state.groups.length <= 1) return;
+  const groups = activeGroups();
+  if (groups.length <= 1) return;
 
-  state.groups.splice(state.activeGroupIndex, 1);
-  state.activeGroupIndex = Math.max(0, state.activeGroupIndex - 1);
+  const index = activeGroupIndex();
+  groups.splice(index, 1);
+  setActiveGroupIndex(Math.max(0, index - 1));
   saveGroups();
   resetGame();
   renderGroupManager();
@@ -816,15 +873,18 @@ function updateSessionLength() {
 
 function selectProfile(profileId) {
   state.activeProfileId = profileId;
+  state.groups = activeGroups();
+  state.activeGroupIndex = activeGroupIndex();
   saveProfiles();
   resetGame();
   renderProfileManager();
   renderProfileSelectors();
   renderWeekGrid();
+  renderGroupManager();
 }
 
 function selectCourse(index) {
-  state.activeGroupIndex = Math.min(Math.max(Number(index), 0), state.groups.length - 1);
+  setActiveGroupIndex(index);
   saveGroups();
   resetGame();
   renderGroupManager();
