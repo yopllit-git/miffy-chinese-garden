@@ -633,18 +633,20 @@ function renderStartScreen() {
   choiceGrid.innerHTML = "";
   state.answered = false;
   state.current = null;
-  instruction.textContent = todayComplete ? "" : `準備好了就開始。完成 ${sessionLength} 題可以得到 1 顆星星。`;
+  instruction.textContent = todayComplete
+    ? `今天 3 顆星已經拿到了，還想練習也可以。這次不會再加星星。`
+    : `準備好了就開始。完成 ${sessionLength} 題可以得到 1 顆星星。`;
   roundLabel.textContent = todayComplete ? "今日完成" : "尚未開始";
   score.textContent = state.score;
   progressFill.style.width = `${Math.min((state.practiced / sessionLength) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
   missionTitle.textContent = `完成 ${sessionLength} 題`;
   sessionLengthInput.value = sessionLength;
-  celebration.hidden = !todayComplete;
-  completionMessage.textContent = todayComplete ? "今天任務已完成！明天再來拿星星。" : "";
-  startButton.hidden = todayComplete;
-  startButton.textContent = "開始練習";
-  startButton.disabled = todayComplete;
+  celebration.hidden = true;
+  completionMessage.textContent = "";
+  startButton.hidden = false;
+  startButton.textContent = todayComplete ? "繼續練習" : "開始練習";
+  startButton.disabled = false;
   speakButton.hidden = true;
   nextButton.disabled = true;
   nextButton.textContent = "下一題";
@@ -652,13 +654,16 @@ function renderStartScreen() {
 
 function renderCompletionScreen() {
   const completedPracticeNumber = state.completedPracticeNumber || getTodayStars();
+  const todayComplete = getTodayStars() >= 3;
   choiceGrid.innerHTML = "";
   instruction.textContent = "";
-  completionMessage.textContent = `恭喜完成第${ordinalText(completedPracticeNumber)}個練習`;
+  completionMessage.textContent = todayComplete
+    ? "今天 3 顆星都拿到了！還可以繼續練習。"
+    : `恭喜完成第${ordinalText(completedPracticeNumber)}個練習`;
   celebration.hidden = false;
-  startButton.hidden = getTodayStars() >= 3;
-  startButton.textContent = getTodayStars() >= 3 ? "今天任務完成" : "開始下一個練習";
-  startButton.disabled = getTodayStars() >= 3;
+  startButton.hidden = false;
+  startButton.textContent = todayComplete ? "繼續練習" : "開始下一個練習";
+  startButton.disabled = false;
   speakButton.hidden = true;
   nextButton.disabled = true;
   nextButton.textContent = "下一題";
@@ -1009,8 +1014,6 @@ function nextRound() {
 }
 
 function startPractice() {
-  if (getTodayStars() >= 3) return;
-
   state.score = 0;
   state.practiced = 0;
   state.recentIndexes = [];
