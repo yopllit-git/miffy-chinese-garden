@@ -87,7 +87,7 @@ const state = {
   activeProfileId: loadActiveProfileId(),
   sessionLength: loadSessionLength(),
   cloudReady: false,
-  cloudLoading: true,
+  cloudLoading: false,
   unlocked: localStorage.getItem(UNLOCK_KEY) === "yes",
   authError: "",
 };
@@ -302,6 +302,9 @@ function persistLocalOnly() {
 async function loadCloudData() {
   if (!state.unlocked) return;
 
+  state.cloudLoading = true;
+  renderAuthState();
+
   try {
     const snapshot = await getDoc(cloudDocRef);
     if (snapshot.exists()) {
@@ -361,10 +364,11 @@ function renderAuthState() {
   passwordLoginButton.disabled = state.cloudLoading;
 
   if (state.unlocked) {
-    userPill.textContent = "家庭模式";
+    userPill.textContent = state.cloudLoading ? "同步中..." : state.cloudReady ? "已同步" : "家庭模式";
     authStatus.textContent = "已解鎖";
   } else {
-    authStatus.textContent = state.authError || (state.cloudLoading ? "同步中..." : "請輸入家庭密碼");
+    passwordLoginButton.disabled = false;
+    authStatus.textContent = state.authError || "請輸入家庭密碼";
   }
 }
 
@@ -378,7 +382,6 @@ function unlockWithPassword() {
 
   state.authError = "";
   state.unlocked = true;
-  state.cloudLoading = true;
   localStorage.setItem(UNLOCK_KEY, "yes");
   renderAuthState();
   loadCloudData().finally(() => {
