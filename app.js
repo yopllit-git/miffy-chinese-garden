@@ -1,13 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import {
-  getAuth,
-  getRedirectResult,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signInWithRedirect,
-  signOut,
-} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-import {
   doc,
   getDoc,
   getFirestore,
@@ -25,10 +17,10 @@ const firebaseConfig = {
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const googleProvider = new GoogleAuthProvider();
 const db = getFirestore(firebaseApp);
 const cloudDocRef = doc(db, "families", "miffy-chinese-garden");
+const FAMILY_PASSWORD = "1982";
+const UNLOCK_KEY = "miffy-family-unlocked";
 const DEFAULT_SESSION_LENGTH = 15;
 const MIN_SESSION_LENGTH = 5;
 const MAX_SESSION_LENGTH = 30;
@@ -96,13 +88,15 @@ const state = {
   sessionLength: loadSessionLength(),
   cloudReady: false,
   cloudLoading: true,
-  user: null,
+  unlocked: localStorage.getItem(UNLOCK_KEY) === "yes",
   authError: "",
 };
 
 const authScreen = document.querySelector("#auth-screen");
 const appShell = document.querySelector("#app-shell");
-const googleLoginButton = document.querySelector("#google-login-button");
+const passwordForm = document.querySelector("#password-form");
+const familyPasswordInput = document.querySelector("#family-password");
+const passwordLoginButton = document.querySelector("#password-login-button");
 const logoutButton = document.querySelector("#logout-button");
 const authStatus = document.querySelector("#auth-status");
 const userPill = document.querySelector("#user-pill");
@@ -306,7 +300,7 @@ function persistLocalOnly() {
 }
 
 async function loadCloudData() {
-  if (!state.user) return;
+  if (!state.unlocked) return;
 
   try {
     const snapshot = await getDoc(cloudDocRef);
@@ -339,7 +333,7 @@ async function loadCloudData() {
 }
 
 async function saveCloudData() {
-  if (!state.cloudReady || !state.user) return;
+  if (!state.cloudReady || !state.unlocked) return;
 
   state.groups = activeGroups();
   state.activeGroupIndex = activeGroupIndex();
@@ -362,33 +356,44 @@ async function saveCloudData() {
 }
 
 function renderAuthState() {
-  const signedIn = Boolean(state.user);
-  authScreen.hidden = signedIn;
-  appShell.hidden = !signedIn;
-  googleLoginButton.disabled = state.cloudLoading;
+  authScreen.hidden = state.unlocked;
+  appShell.hidden = !state.unlocked;
+  passwordLoginButton.disabled = state.cloudLoading;
 
-  if (signedIn) {
-    userPill.textContent = state.user.displayName || state.user.email || "已登入";
-    authStatus.textContent = "已登入";
+  if (state.unlocked) {
+    userPill.textContent = "家庭模式";
+    authStatus.textContent = "已解鎖";
   } else {
-    authStatus.textContent = state.authError || (state.cloudLoading ? "登入中..." : "請先登入");
+    authStatus.textContent = state.authError || (state.cloudLoading ? "同步中..." : "請輸入家庭密碼");
   }
 }
 
-async function loginWithGoogle() {
+function unlockWithPassword() {
+  if (familyPasswordInput.value.trim() !== FAMILY_PASSWORD) {
+    state.authError = "密碼不正確";
+    renderAuthState();
+    familyPasswordInput.select();
+    return;
+  }
+
   state.authError = "";
+  state.unlocked = true;
   state.cloudLoading = true;
+  localStorage.setItem(UNLOCK_KEY, "yes");
   renderAuthState();
-  await signInWithRedirect(auth, googleProvider);
+  loadCloudData().finally(() => {
+    renderAuthState();
+  });
 }
 
-async function logout() {
+function lockApp() {
   state.cloudReady = false;
   state.cloudLoading = false;
-  state.user = null;
+  state.unlocked = false;
   state.authError = "";
+  localStorage.removeItem(UNLOCK_KEY);
+  familyPasswordInput.value = "";
   renderAuthState();
-  await signOut(auth);
 }
 
 function normalizeWords(words) {
@@ -1042,38 +1047,11 @@ soundToggle.addEventListener("click", () => {
   state.soundOn = !state.soundOn;
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
 });
-googleLoginButton.addEventListener("click", () => {
-  loginWithGoogle().catch((error) => {
-    state.cloudLoading = false;
-    state.authError = `登入失敗：${error.code || error.message}`;
-    renderAuthState();
-  });
+passwordForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  unlockWithPassword();
 });
-logoutButton.addEventListener("click", () => {
-  logout().catch((error) => {
-    console.warn("Logout failed", error);
-  });
-});
-
-getRedirectResult(auth).catch((error) => {
-  state.cloudLoading = false;
-  state.authError = `登入失敗：${error.code || error.message}`;
-  renderAuthState();
-});
-
-onAuthStateChanged(auth, (user) => {
-  state.user = user;
-  state.cloudReady = false;
-  state.cloudLoading = Boolean(user);
-  state.authError = "";
-  renderAuthState();
-
-  if (!user) return;
-
-  loadCloudData().finally(() => {
-    renderAuthState();
-  });
-});
+logoutButton.addEventListener("click", lockApp);
 
 renderGroupManager();
 renderProfileManager();
@@ -1082,3 +1060,8 @@ renderWeekGrid();
 parentDetails.open = true;
 renderStats();
 renderAuthState();
+if (state.unlocked) {
+  loadCloudData().finally(() => {
+    renderAuthState();
+  });
+}
