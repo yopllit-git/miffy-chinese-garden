@@ -13,14 +13,29 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app-shell">
+    <section class="auth-screen" id="auth-screen" aria-label="登入畫面">
+      <div class="auth-card">
+        <img src="./icons/app-icon-192.png" alt="" class="auth-icon" />
+        <p class="eyebrow">咪菲認字小花園</p>
+        <h1>登入後開始練習</h1>
+        <p class="auth-copy">用 Google 登入後，課程、小孩資料和星星會同步保存。</p>
+        <button class="google-button" id="google-login-button" type="button">Google 登入</button>
+        <p class="auth-status" id="auth-status">等待登入</p>
+      </div>
+    </section>
+
+    <main class="app-shell" id="app-shell" hidden>
       <header class="app-header">
         <div>
           <h1 id="app-title">咪菲認字小花園</h1>
         </div>
-        <button class="icon-button" id="sound-toggle" type="button" aria-label="開關聲音">
-          🔊
-        </button>
+        <div class="header-actions">
+          <p class="user-pill" id="user-pill">已登入</p>
+          <button class="text-button" id="logout-button" type="button">登出</button>
+          <button class="icon-button" id="sound-toggle" type="button" aria-label="開關聲音">
+            🔊
+          </button>
+        </div>
       </header>
 
       <nav class="app-nav" aria-label="主要頁面">

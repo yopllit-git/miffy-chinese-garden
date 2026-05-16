@@ -1,5 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import {
+  getAuth,
+  getRedirectResult,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithRedirect,
+  signOut,
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import {
   doc,
   getDoc,
   getFirestore,
@@ -17,6 +25,8 @@ const firebaseConfig = {
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const googleProvider = new GoogleAuthProvider();
 const db = getFirestore(firebaseApp);
 const cloudDocRef = doc(db, "families", "miffy-chinese-garden");
 const DEFAULT_SESSION_LENGTH = 15;
@@ -86,8 +96,16 @@ const state = {
   sessionLength: loadSessionLength(),
   cloudReady: false,
   cloudLoading: true,
+  user: null,
+  authError: "",
 };
 
+const authScreen = document.querySelector("#auth-screen");
+const appShell = document.querySelector("#app-shell");
+const googleLoginButton = document.querySelector("#google-login-button");
+const logoutButton = document.querySelector("#logout-button");
+const authStatus = document.querySelector("#auth-status");
+const userPill = document.querySelector("#user-pill");
 const choiceGrid = document.querySelector("#choice-grid");
 const instruction = document.querySelector("#instruction");
 const picturePrompt = document.querySelector("#picture-prompt");
@@ -288,6 +306,8 @@ function persistLocalOnly() {
 }
 
 async function loadCloudData() {
+  if (!state.user) return;
+
   try {
     const snapshot = await getDoc(cloudDocRef);
     if (snapshot.exists()) {
@@ -319,7 +339,7 @@ async function loadCloudData() {
 }
 
 async function saveCloudData() {
-  if (!state.cloudReady) return;
+  if (!state.cloudReady || !state.user) return;
 
   state.groups = activeGroups();
   state.activeGroupIndex = activeGroupIndex();
@@ -339,6 +359,36 @@ async function saveCloudData() {
   ).catch((error) => {
     console.warn("Cloud save failed", error);
   });
+}
+
+function renderAuthState() {
+  const signedIn = Boolean(state.user);
+  authScreen.hidden = signedIn;
+  appShell.hidden = !signedIn;
+  googleLoginButton.disabled = state.cloudLoading;
+
+  if (signedIn) {
+    userPill.textContent = state.user.displayName || state.user.email || "已登入";
+    authStatus.textContent = "已登入";
+  } else {
+    authStatus.textContent = state.authError || (state.cloudLoading ? "登入中..." : "請先登入");
+  }
+}
+
+async function loginWithGoogle() {
+  state.authError = "";
+  state.cloudLoading = true;
+  renderAuthState();
+  await signInWithRedirect(auth, googleProvider);
+}
+
+async function logout() {
+  state.cloudReady = false;
+  state.cloudLoading = false;
+  state.user = null;
+  state.authError = "";
+  renderAuthState();
+  await signOut(auth);
 }
 
 function normalizeWords(words) {
@@ -992,6 +1042,38 @@ soundToggle.addEventListener("click", () => {
   state.soundOn = !state.soundOn;
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
 });
+googleLoginButton.addEventListener("click", () => {
+  loginWithGoogle().catch((error) => {
+    state.cloudLoading = false;
+    state.authError = `登入失敗：${error.code || error.message}`;
+    renderAuthState();
+  });
+});
+logoutButton.addEventListener("click", () => {
+  logout().catch((error) => {
+    console.warn("Logout failed", error);
+  });
+});
+
+getRedirectResult(auth).catch((error) => {
+  state.cloudLoading = false;
+  state.authError = `登入失敗：${error.code || error.message}`;
+  renderAuthState();
+});
+
+onAuthStateChanged(auth, (user) => {
+  state.user = user;
+  state.cloudReady = false;
+  state.cloudLoading = Boolean(user);
+  state.authError = "";
+  renderAuthState();
+
+  if (!user) return;
+
+  loadCloudData().finally(() => {
+    renderAuthState();
+  });
+});
 
 renderGroupManager();
 renderProfileManager();
@@ -999,4 +1081,4 @@ renderProfileSelectors();
 renderWeekGrid();
 parentDetails.open = true;
 renderStats();
-loadCloudData();
+renderAuthState();
