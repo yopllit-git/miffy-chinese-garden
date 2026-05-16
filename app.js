@@ -102,6 +102,10 @@ const saveProfileButton = document.querySelector("#save-profile-button");
 const deleteProfileButton = document.querySelector("#delete-profile-button");
 const profileNameInput = document.querySelector("#profile-name");
 const sessionLengthInput = document.querySelector("#session-length");
+const childScopeNote = document.querySelector("#child-scope-note");
+const courseScopeNote = document.querySelector("#course-scope-note");
+const practiceScopeNote = document.querySelector("#practice-scope-note");
+const editorScopeNote = document.querySelector("#editor-scope-note");
 
 let audioContext;
 let currentWordAudio;
@@ -176,7 +180,9 @@ function loadSessionLength() {
 }
 
 function saveSessionLength() {
-  state.sessionLength = clampSessionLength(state.sessionLength);
+  const profile = activeProfile();
+  profile.sessionLength = clampSessionLength(profile.sessionLength || state.sessionLength);
+  state.sessionLength = profile.sessionLength;
   localStorage.setItem("miffy-session-length", String(state.sessionLength));
   saveLocalData();
 }
@@ -209,6 +215,7 @@ function groupSignature(group) {
 function persistLocalOnly() {
   state.groups = activeGroups();
   state.activeGroupIndex = activeGroupIndex();
+  state.sessionLength = activeSessionLength();
   localStorage.setItem("miffy-word-groups", JSON.stringify(state.groups));
   localStorage.setItem("miffy-active-group", String(state.activeGroupIndex));
   localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
@@ -244,6 +251,7 @@ function normalizeProfiles(profiles, legacyStars = {}, fallbackGroups = null) {
             dailyStars: profile.dailyStars || {},
             groups,
             activeGroupIndex: Math.min(Math.max(Number(profile.activeGroupIndex) || 0, 0), groups.length - 1),
+            sessionLength: clampSessionLength(profile.sessionLength || loadSessionLength()),
           };
         })
         .filter((profile) => profile.id && profile.name)
@@ -257,6 +265,7 @@ function normalizeProfiles(profiles, legacyStars = {}, fallbackGroups = null) {
     dailyStars: legacyStars || {},
     groups,
     activeGroupIndex: 0,
+    sessionLength: loadSessionLength(),
   }];
 }
 
@@ -272,6 +281,7 @@ function activeProfile() {
   }
   if (!profile.groups) profile.groups = normalizeGroups(state.groups || starterGroups);
   profile.activeGroupIndex = Math.min(Math.max(Number(profile.activeGroupIndex) || 0, 0), profile.groups.length - 1);
+  profile.sessionLength = clampSessionLength(profile.sessionLength || state.sessionLength || DEFAULT_SESSION_LENGTH);
   return profile;
 }
 
@@ -287,6 +297,18 @@ function setActiveGroupIndex(index) {
   const profile = activeProfile();
   profile.activeGroupIndex = Math.min(Math.max(Number(index), 0), activeGroups().length - 1);
   state.activeGroupIndex = profile.activeGroupIndex;
+}
+
+function activeSessionLength() {
+  return activeProfile().sessionLength;
+}
+
+function renderChildScopeNotes() {
+  const profileName = activeProfile().name;
+  childScopeNote.textContent = `正在編輯：${profileName}。下面的課程、題數、字詞都屬於${profileName}。`;
+  courseScopeNote.textContent = `這些課程只會出現在${profileName}的練習裡。`;
+  practiceScopeNote.textContent = `這個題數只套用在${profileName}。題數越少，孩子比較容易完成。`;
+  editorScopeNote.textContent = `每行一個字詞。這裡編輯的是${profileName}目前選到的課程。`;
 }
 
 function pickWord() {
@@ -431,16 +453,17 @@ function ordinalText(number) {
 
 function renderStartScreen() {
   const todayComplete = getTodayStars() >= 3;
+  const sessionLength = activeSessionLength();
   choiceGrid.innerHTML = "";
   state.answered = false;
   state.current = null;
-  instruction.textContent = todayComplete ? "" : `準備好了就開始。完成 ${state.sessionLength} 題可以得到 1 顆星星。`;
+  instruction.textContent = todayComplete ? "" : `準備好了就開始。完成 ${sessionLength} 題可以得到 1 顆星星。`;
   roundLabel.textContent = todayComplete ? "今日完成" : "尚未開始";
   score.textContent = state.score;
-  progressFill.style.width = `${Math.min((state.practiced / state.sessionLength) * 100, 100)}%`;
+  progressFill.style.width = `${Math.min((state.practiced / sessionLength) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
-  missionTitle.textContent = `完成 ${state.sessionLength} 題`;
-  sessionLengthInput.value = state.sessionLength;
+  missionTitle.textContent = `完成 ${sessionLength} 題`;
+  sessionLengthInput.value = sessionLength;
   celebration.hidden = !todayComplete;
   completionMessage.textContent = todayComplete ? "今天任務已完成！明天再來拿星星。" : "";
   startButton.hidden = todayComplete;
@@ -478,12 +501,14 @@ function renderChoices() {
 }
 
 function renderStats() {
+  const sessionLength = activeSessionLength();
   score.textContent = state.score;
-  roundLabel.textContent = `第 ${Math.min(state.practiced + 1, state.sessionLength)} / ${state.sessionLength} 題`;
-  progressFill.style.width = `${Math.min((state.practiced / state.sessionLength) * 100, 100)}%`;
+  roundLabel.textContent = `第 ${Math.min(state.practiced + 1, sessionLength)} / ${sessionLength} 題`;
+  progressFill.style.width = `${Math.min((state.practiced / sessionLength) * 100, 100)}%`;
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
-  missionTitle.textContent = `完成 ${state.sessionLength} 題`;
-  sessionLengthInput.value = state.sessionLength;
+  missionTitle.textContent = `完成 ${sessionLength} 題`;
+  sessionLengthInput.value = sessionLength;
+  renderChildScopeNotes();
   renderWeekGrid();
   if (state.sessionComplete) {
     renderCompletionScreen();
@@ -632,6 +657,7 @@ function addProfile() {
     dailyStars: {},
     groups: normalizeGroups(starterGroups),
     activeGroupIndex: 0,
+    sessionLength: DEFAULT_SESSION_LENGTH,
   });
   state.activeProfileId = id;
   saveProfiles();
@@ -672,7 +698,9 @@ function deleteGroup() {
 }
 
 function updateSessionLength() {
-  state.sessionLength = clampSessionLength(sessionLengthInput.value);
+  const profile = activeProfile();
+  profile.sessionLength = clampSessionLength(sessionLengthInput.value);
+  state.sessionLength = profile.sessionLength;
   saveSessionLength();
   resetGame();
 }
@@ -681,6 +709,7 @@ function selectProfile(profileId) {
   state.activeProfileId = profileId;
   state.groups = activeGroups();
   state.activeGroupIndex = activeGroupIndex();
+  state.sessionLength = activeSessionLength();
   saveProfiles();
   resetGame();
   renderProfileManager();
@@ -774,7 +803,7 @@ function handleAnswer(button, selected) {
     state.answered = true;
     state.practiced += 1;
     state.score += 1;
-    if (state.practiced >= state.sessionLength) {
+    if (state.practiced >= activeSessionLength()) {
       addTodayStar();
       state.sessionComplete = true;
       state.sessionStarted = false;

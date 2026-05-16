@@ -115,7 +115,7 @@
                 <button class="small-button" id="add-profile-button" type="button">新增小孩</button>
               </div>
               <div class="profile-tabs" id="profile-tabs" aria-label="小孩清單"></div>
-              <p class="helper-text compact">每個小孩會有自己的課程、星星和本週紀錄。</p>
+              <p class="helper-text compact">每個小孩會有自己的課程、題數、星星和本週紀錄。</p>
               <label class="field-label" for="profile-name">小孩名稱</label>
               <input
                 class="text-field"
@@ -130,6 +130,8 @@
               </div>
             </div>
 
+            <div class="child-scope-card" id="child-scope-note">正在編輯：咪菲。下面的課程、題數、字詞都屬於咪菲。</div>
+
             <div class="manager-card course-card">
               <div class="section-heading step-heading">
                 <span class="step-number">2</span>
@@ -140,7 +142,7 @@
                 <button class="small-button" id="add-group-button" type="button">新增課程</button>
               </div>
               <div class="group-tabs" id="group-tabs" aria-label="字詞組清單"></div>
-              <p class="helper-text compact">最多 10 組，可以依樂樂書課程或每週複習主題建立。</p>
+              <p class="helper-text compact" id="course-scope-note">這些課程只會出現在咪菲的練習裡。</p>
             </div>
 
             <div class="manager-card practice-card">
@@ -161,7 +163,7 @@
                 step="1"
                 inputmode="numeric"
               />
-              <p class="helper-text compact">預設 15 題。題數越少，孩子比較容易完成；題數越多，練習時間會比較長。</p>
+              <p class="helper-text compact" id="practice-scope-note">這個題數只套用在咪菲。題數越少，孩子比較容易完成。</p>
             </div>
 
             <div class="manager-grid">
@@ -192,7 +194,7 @@
                   spellcheck="false"
                   placeholder="我&#10;你&#10;媽媽&#10;爸爸"
                 ></textarea>
-                <p class="helper-text">每行一個字詞。例：天上、小狗、小貓。</p>
+                <p class="helper-text" id="editor-scope-note">每行一個字詞。這裡編輯的是咪菲目前選到的課程。</p>
 
                 <div class="manager-actions">
                   <button class="secondary-button" id="save-group-button" type="button">儲存課程</button>
