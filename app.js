@@ -116,7 +116,6 @@ const progressFill = document.querySelector("#progress-fill");
 const soundToggle = document.querySelector("#sound-toggle");
 const navButtons = document.querySelectorAll(".nav-button");
 const pagePanels = document.querySelectorAll(".app-page");
-const parentDetails = document.querySelector(".parent-details");
 const groupTabs = document.querySelector("#group-tabs");
 const addGroupButton = document.querySelector("#add-group-button");
 const saveGroupButton = document.querySelector("#save-group-button");
@@ -137,10 +136,7 @@ const saveProfileButton = document.querySelector("#save-profile-button");
 const deleteProfileButton = document.querySelector("#delete-profile-button");
 const profileNameInput = document.querySelector("#profile-name");
 const sessionLengthInput = document.querySelector("#session-length");
-const childScopeNote = document.querySelector("#child-scope-note");
-const courseScopeNote = document.querySelector("#course-scope-note");
-const practiceScopeNote = document.querySelector("#practice-scope-note");
-const editorScopeNote = document.querySelector("#editor-scope-note");
+const settingsContext = document.querySelector("#settings-context");
 
 let audioContext;
 let currentWordAudio;
@@ -479,12 +475,10 @@ function activeSessionLength() {
   return activeProfile().sessionLength;
 }
 
-function renderChildScopeNotes() {
-  const profileName = activeProfile().name;
-  childScopeNote.textContent = `正在編輯：${profileName}。下面的課程、題數、字詞都屬於${profileName}。`;
-  courseScopeNote.textContent = `這些課程只會出現在${profileName}的練習裡。`;
-  practiceScopeNote.textContent = `這個題數只套用在${profileName}。題數越少，孩子比較容易完成。`;
-  editorScopeNote.textContent = `每行一個字詞。這裡編輯的是${profileName}目前選到的課程。`;
+function renderSettingsContext() {
+  const profile = activeProfile();
+  const courseName = activeGroups()[activeGroupIndex()]?.name || "";
+  settingsContext.textContent = `${profile.name} · ${courseName}`;
 }
 
 function pickWord() {
@@ -689,7 +683,7 @@ function renderStats() {
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
   missionTitle.textContent = `完成 ${sessionLength} 題`;
   sessionLengthInput.value = sessionLength;
-  renderChildScopeNotes();
+  renderSettingsContext();
   renderWeekGrid();
   if (state.sessionComplete) {
     renderCompletionScreen();
@@ -705,17 +699,11 @@ function renderGroupManager() {
   const index = activeGroupIndex();
   groupTabs.innerHTML = "";
   groups.forEach((group, groupIndex) => {
-    const button = document.createElement("button");
-    button.className = `group-tab${groupIndex === index ? " active" : ""}`;
-    button.type = "button";
-    button.textContent = group.name;
-    button.addEventListener("click", () => {
-      setActiveGroupIndex(groupIndex);
-      saveGroups();
-      resetGame();
-      renderGroupManager();
-    });
-    groupTabs.append(button);
+    const option = document.createElement("option");
+    option.value = String(groupIndex);
+    option.textContent = group.name;
+    option.selected = groupIndex === index;
+    groupTabs.append(option);
   });
 
   const activeGroup = groups[index];
@@ -744,20 +732,11 @@ function renderCourseSelectors() {
 function renderProfileManager() {
   profileTabs.innerHTML = "";
   state.profiles.forEach((profile) => {
-    const button = document.createElement("button");
-    button.className = `profile-tab${profile.id === state.activeProfileId ? " active" : ""}`;
-    button.type = "button";
-    button.textContent = profile.name;
-    button.addEventListener("click", () => {
-      state.activeProfileId = profile.id;
-      saveProfiles();
-      resetGame();
-      renderProfileManager();
-      renderProfileSelectors();
-      renderWeekGrid();
-      renderGroupManager();
-    });
-    profileTabs.append(button);
+    const option = document.createElement("option");
+    option.value = profile.id;
+    option.textContent = profile.name;
+    option.selected = profile.id === state.activeProfileId;
+    profileTabs.append(option);
   });
 
   profileNameInput.value = activeProfile().name;
@@ -1039,6 +1018,8 @@ navButtons.forEach((button) => {
 practiceCourseSelect.addEventListener("change", () => selectCourse(practiceCourseSelect.value));
 practiceProfileSelect.addEventListener("change", () => selectProfile(practiceProfileSelect.value));
 rewardProfileSelect.addEventListener("change", () => selectProfile(rewardProfileSelect.value));
+groupTabs.addEventListener("change", () => selectCourse(groupTabs.value));
+profileTabs.addEventListener("change", () => selectProfile(profileTabs.value));
 speakButton.addEventListener("click", () => playWordAudio(state.current));
 startButton.addEventListener("click", startPractice);
 nextButton.addEventListener("click", nextRound);
@@ -1063,7 +1044,6 @@ renderGroupManager();
 renderProfileManager();
 renderProfileSelectors();
 renderWeekGrid();
-parentDetails.open = true;
 renderStats();
 renderAuthState();
 if (state.unlocked) {

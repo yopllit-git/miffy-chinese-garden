@@ -128,60 +128,33 @@
       </section>
 
       <section class="parent-panel app-page" data-page-panel="parent" aria-labelledby="parent-title" hidden>
-        <details class="parent-details" open>
-          <summary id="parent-title">設定</summary>
-          <section class="group-manager" aria-labelledby="group-title">
-            <div class="manager-card profile-card">
-              <div class="section-heading step-heading">
-                <span class="step-number">1</span>
-                <div>
-                  <h2>學習對象</h2>
-                  <p class="eyebrow">小孩</p>
-                </div>
-                <button class="small-button" id="add-profile-button" type="button">新增小孩</button>
-              </div>
-              <div class="profile-tabs" id="profile-tabs" aria-label="小孩清單"></div>
-              <p class="helper-text compact">每個小孩會有自己的課程、題數、星星和本週紀錄。</p>
-              <label class="field-label" for="profile-name">小孩名稱</label>
-              <input
-                class="text-field"
-                id="profile-name"
-                type="text"
-                maxlength="18"
-                placeholder="例如：咪菲"
-              />
-              <div class="manager-actions compact-actions">
-                <button class="secondary-button" id="save-profile-button" type="button">儲存小孩</button>
-                <button class="ghost-button" id="delete-profile-button" type="button">刪除</button>
-              </div>
+        <header class="settings-head">
+          <h2 id="parent-title">設定</h2>
+          <p class="settings-context" id="settings-context">管理小孩、課程與字詞</p>
+        </header>
+
+        <section class="manager-card picker-card" aria-label="小孩與課程">
+          <div class="picker-row">
+            <div class="picker-row-head">
+              <label class="eyebrow" for="profile-tabs">小孩</label>
+              <button class="add-chip" id="add-profile-button" type="button" title="新增小孩" aria-label="新增小孩">＋</button>
             </div>
+            <select class="picker-select" id="profile-tabs" aria-label="小孩清單"></select>
+          </div>
 
-            <div class="child-scope-card" id="child-scope-note">正在編輯：咪菲。下面的課程、題數、字詞都屬於咪菲。</div>
-
-            <div class="manager-card course-card">
-              <div class="section-heading step-heading">
-                <span class="step-number">2</span>
-                <div>
-                  <h2 id="group-title">字詞組</h2>
-                  <p class="eyebrow">課程</p>
-                </div>
-                <button class="small-button" id="add-group-button" type="button">新增課程</button>
-              </div>
-              <div class="group-tabs" id="group-tabs" aria-label="字詞組清單"></div>
-              <p class="helper-text compact" id="course-scope-note">這些課程只會出現在咪菲的練習裡。</p>
+          <div class="picker-row">
+            <div class="picker-row-head">
+              <label class="eyebrow" for="group-tabs">課程</label>
+              <button class="add-chip" id="add-group-button" type="button" title="新增課程" aria-label="新增課程">＋</button>
             </div>
+            <select class="picker-select" id="group-tabs" aria-label="字詞組清單"></select>
+          </div>
 
-            <div class="manager-card practice-card">
-              <div class="section-heading step-heading">
-                <span class="step-number">3</span>
-                <div>
-                  <h2>每次題數</h2>
-                  <p class="eyebrow">練習</p>
-                </div>
-              </div>
-              <label class="field-label" for="session-length">完成幾題得到 1 顆星</label>
+          <div class="picker-footer">
+            <label class="inline-field" for="session-length">
+              <span>每次題數</span>
               <input
-                class="text-field"
+                class="text-field small"
                 id="session-length"
                 type="number"
                 min="5"
@@ -189,48 +162,48 @@
                 step="1"
                 inputmode="numeric"
               />
-              <p class="helper-text compact" id="practice-scope-note">這個題數只套用在咪菲。題數越少，孩子比較容易完成。</p>
-            </div>
+            </label>
+            <span class="group-count" id="group-count">0 / 10</span>
+          </div>
 
-            <div class="manager-grid">
-              <div class="manager-card editor-card">
-                <div class="section-heading step-heading">
-                  <span class="step-number">4</span>
-                  <div>
-                    <h2>課程名稱與字詞</h2>
-                    <p class="eyebrow">編輯</p>
-                  </div>
-                  <span class="group-count" id="group-count">0 / 10</span>
-                </div>
-
-                <label class="field-label" for="group-name">課程名稱</label>
-                <input
-                  class="text-field"
-                  id="group-name"
-                  type="text"
-                  maxlength="18"
-                  placeholder="例如：樂樂書第一課"
-                />
-
-                <label class="field-label" for="word-editor">字詞</label>
-                <textarea
-                  class="word-editor"
-                  id="word-editor"
-                  rows="8"
-                  spellcheck="false"
-                  placeholder="我&#10;你&#10;媽媽&#10;爸爸"
-                ></textarea>
-                <p class="helper-text" id="editor-scope-note">每行一個字詞。這裡編輯的是咪菲目前選到的課程。</p>
-
-                <div class="manager-actions">
-                  <button class="secondary-button" id="save-group-button" type="button">儲存課程</button>
-                  <button class="ghost-button" id="delete-group-button" type="button">刪除</button>
-                </div>
+          <details class="rename-drawer">
+            <summary>重新命名或刪除小孩</summary>
+            <div class="rename-row">
+              <input class="text-field" id="profile-name" type="text" maxlength="18" placeholder="小孩名稱" />
+              <div class="rename-actions">
+                <button class="small-button" id="save-profile-button" type="button">儲存名稱</button>
+                <button class="ghost-button" id="delete-profile-button" type="button">刪除小孩</button>
               </div>
-
             </div>
-          </section>
-        </details>
+          </details>
+        </section>
+
+        <section class="manager-card editor-card" aria-label="編輯課程">
+          <h3 class="editor-heading">課程內容</h3>
+
+          <label class="field-label" for="group-name">課程名稱</label>
+          <input
+            class="text-field"
+            id="group-name"
+            type="text"
+            maxlength="18"
+            placeholder="例如：樂樂書第一課"
+          />
+
+          <label class="field-label" for="word-editor">字詞（每行一個）</label>
+          <textarea
+            class="word-editor"
+            id="word-editor"
+            rows="8"
+            spellcheck="false"
+            placeholder="我&#10;你&#10;媽媽&#10;爸爸"
+          ></textarea>
+
+          <div class="manager-actions">
+            <button class="secondary-button" id="save-group-button" type="button">儲存課程</button>
+            <button class="ghost-button" id="delete-group-button" type="button">刪除課程</button>
+          </div>
+        </section>
       </section>
     </main>
 
