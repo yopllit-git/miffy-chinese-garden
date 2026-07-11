@@ -22,7 +22,7 @@ http://localhost:5174/index.html
 
 ## 資料儲存
 
-目前資料會存在 Firebase Firestore，並保留 localStorage 作為本機備份。App 使用家庭密碼先解鎖，解鎖後會自動同步小孩、課程、題數和星星。
+目前資料會存在 Firebase Firestore，並保留 localStorage 作為本機備份。開啟 App 即自動同步小孩、課程、題數和星星，不需要輸入密碼。
 
 目前 Firestore rules 是家庭自用快速版：
 

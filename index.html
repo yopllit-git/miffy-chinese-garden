@@ -13,36 +13,13 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <section class="auth-screen" id="auth-screen" aria-label="登入畫面">
-      <div class="auth-card">
-        <img src="./icons/app-icon-192.png" alt="" class="auth-icon" />
-        <p class="eyebrow">咪菲認字小花園</p>
-        <h1>輸入家庭密碼</h1>
-        <p class="auth-copy">輸入密碼後，課程、小孩資料和星星會同步保存。</p>
-        <form class="password-form" id="password-form">
-          <label class="field-label" for="family-password">家庭密碼</label>
-          <input
-            class="text-field"
-            id="family-password"
-            type="password"
-            inputmode="numeric"
-            autocomplete="current-password"
-            placeholder="輸入密碼"
-          />
-          <button class="google-button" id="password-login-button" type="submit">進入小花園</button>
-        </form>
-        <p class="auth-status" id="auth-status">請輸入家庭密碼</p>
-      </div>
-    </section>
-
-    <main class="app-shell" id="app-shell" hidden>
+    <main class="app-shell" id="app-shell">
       <header class="app-header">
         <div>
           <h1 id="app-title">咪菲認字小花園</h1>
         </div>
         <div class="header-actions">
-          <p class="user-pill" id="user-pill">家庭模式</p>
-          <button class="text-button" id="logout-button" type="button">鎖定</button>
+          <p class="user-pill" id="user-pill">同步中...</p>
           <button class="icon-button" id="sound-toggle" type="button" aria-label="開關聲音">
             🔊
           </button>

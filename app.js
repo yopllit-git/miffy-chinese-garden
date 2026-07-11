@@ -19,8 +19,6 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const cloudDocRef = doc(db, "families", "miffy-chinese-garden");
-const FAMILY_PASSWORD = "1982";
-const UNLOCK_KEY = "miffy-family-unlocked";
 const DEFAULT_SESSION_LENGTH = 15;
 const MIN_SESSION_LENGTH = 5;
 const MAX_SESSION_LENGTH = 30;
@@ -88,17 +86,8 @@ const state = {
   sessionLength: loadSessionLength(),
   cloudReady: false,
   cloudLoading: false,
-  unlocked: localStorage.getItem(UNLOCK_KEY) === "yes",
-  authError: "",
 };
 
-const authScreen = document.querySelector("#auth-screen");
-const appShell = document.querySelector("#app-shell");
-const passwordForm = document.querySelector("#password-form");
-const familyPasswordInput = document.querySelector("#family-password");
-const passwordLoginButton = document.querySelector("#password-login-button");
-const logoutButton = document.querySelector("#logout-button");
-const authStatus = document.querySelector("#auth-status");
 const userPill = document.querySelector("#user-pill");
 const choiceGrid = document.querySelector("#choice-grid");
 const instruction = document.querySelector("#instruction");
@@ -296,10 +285,8 @@ function persistLocalOnly() {
 }
 
 async function loadCloudData() {
-  if (!state.unlocked) return;
-
   state.cloudLoading = true;
-  renderAuthState();
+  renderSyncStatus();
 
   try {
     const snapshot = await getDoc(cloudDocRef);
@@ -332,7 +319,7 @@ async function loadCloudData() {
 }
 
 async function saveCloudData() {
-  if (!state.cloudReady || !state.unlocked) return;
+  if (!state.cloudReady) return;
 
   state.groups = activeGroups();
   state.activeGroupIndex = activeGroupIndex();
@@ -354,45 +341,8 @@ async function saveCloudData() {
   });
 }
 
-function renderAuthState() {
-  authScreen.hidden = state.unlocked;
-  appShell.hidden = !state.unlocked;
-  passwordLoginButton.disabled = state.cloudLoading;
-
-  if (state.unlocked) {
-    userPill.textContent = state.cloudLoading ? "同步中..." : state.cloudReady ? "已同步" : "家庭模式";
-    authStatus.textContent = "已解鎖";
-  } else {
-    passwordLoginButton.disabled = false;
-    authStatus.textContent = state.authError || "請輸入家庭密碼";
-  }
-}
-
-function unlockWithPassword() {
-  if (familyPasswordInput.value.trim() !== FAMILY_PASSWORD) {
-    state.authError = "密碼不正確";
-    renderAuthState();
-    familyPasswordInput.select();
-    return;
-  }
-
-  state.authError = "";
-  state.unlocked = true;
-  localStorage.setItem(UNLOCK_KEY, "yes");
-  renderAuthState();
-  loadCloudData().finally(() => {
-    renderAuthState();
-  });
-}
-
-function lockApp() {
-  state.cloudReady = false;
-  state.cloudLoading = false;
-  state.unlocked = false;
-  state.authError = "";
-  localStorage.removeItem(UNLOCK_KEY);
-  familyPasswordInput.value = "";
-  renderAuthState();
+function renderSyncStatus() {
+  userPill.textContent = state.cloudLoading ? "同步中..." : state.cloudReady ? "已同步" : "家庭模式";
 }
 
 function normalizeWords(words) {
@@ -1034,20 +984,13 @@ soundToggle.addEventListener("click", () => {
   state.soundOn = !state.soundOn;
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
 });
-passwordForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  unlockWithPassword();
-});
-logoutButton.addEventListener("click", lockApp);
 
 renderGroupManager();
 renderProfileManager();
 renderProfileSelectors();
 renderWeekGrid();
 renderStats();
-renderAuthState();
-if (state.unlocked) {
-  loadCloudData().finally(() => {
-    renderAuthState();
-  });
-}
+renderSyncStatus();
+loadCloudData().finally(() => {
+  renderSyncStatus();
+});
