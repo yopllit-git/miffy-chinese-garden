@@ -22,9 +22,9 @@ http://localhost:5174/index.html
 
 ## 資料儲存
 
-目前資料會存在 Firebase Firestore，並保留 localStorage 作為本機備份。開啟 App 即自動同步小孩、課程、題數和星星，不需要輸入密碼。
+目前資料會存在 Firebase Firestore，並保留 localStorage 作為本機備份。需要用白名單內的 Google 帳號登入後，才會同步小孩、課程、題數和星星。
 
-目前 Firestore rules 是家庭自用快速版：
+目前 Firestore rules 只允許白名單 email 讀寫：
 
 ```text
 rules_version = '2';
@@ -32,7 +32,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /families/miffy-chinese-garden {
-      allow read, write: if true;
+      allow read, write: if request.auth != null
+        && request.auth.token.email in ['yopllit@gmail.com'];
     }
   }
 }

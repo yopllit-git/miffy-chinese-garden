@@ -6,6 +6,13 @@ import {
   serverTimestamp,
   setDoc,
 } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDjXk4wdZWOi8CxX3Quz3eJLCN89UGeCsQ",
@@ -16,12 +23,18 @@ const firebaseConfig = {
   appId: "1:46399762559:web:5464bd10ccb9e05fbb4f4a",
 };
 
+const ALLOWED_EMAILS = ["yopllit@gmail.com"];
+
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
+const auth = getAuth(firebaseApp);
+const googleProvider = new GoogleAuthProvider();
 const cloudDocRef = doc(db, "families", "miffy-chinese-garden");
 const DEFAULT_SESSION_LENGTH = 15;
 const MIN_SESSION_LENGTH = 5;
 const MAX_SESSION_LENGTH = 30;
+const MAX_ATTEMPTS_PER_WORD = 2;
+const MAX_MISSES_FOR_STAR = 2;
 
 const audioByText = {
   我: "wo.wav",
@@ -74,7 +87,10 @@ const state = {
   answered: false,
   score: 0,
   practiced: 0,
+  wrongAttempts: 0,
+  missed: 0,
   sessionComplete: false,
+  sessionPassed: false,
   sessionStarted: false,
   completedPracticeNumber: 0,
   soundOn: true,
@@ -88,12 +104,18 @@ const state = {
   cloudLoading: false,
 };
 
+const authScreen = document.querySelector("#auth-screen");
+const appShell = document.querySelector("#app-shell");
+const googleSigninButton = document.querySelector("#google-signin-button");
+const authStatus = document.querySelector("#auth-status");
+const logoutButton = document.querySelector("#logout-button");
 const userPill = document.querySelector("#user-pill");
 const choiceGrid = document.querySelector("#choice-grid");
 const instruction = document.querySelector("#instruction");
 const picturePrompt = document.querySelector("#picture-prompt");
 const characterPrompt = document.querySelector("#character-prompt");
 const celebration = document.querySelector("#celebration");
+const confetti = document.querySelector("#confetti");
 const completionMessage = document.querySelector("#completion-message");
 const missionTitle = document.querySelector("#mission-title");
 const startButton = document.querySelector("#start-button");
@@ -344,6 +366,50 @@ async function saveCloudData() {
 function renderSyncStatus() {
   userPill.textContent = state.cloudLoading ? "同步中..." : state.cloudReady ? "已同步" : "家庭模式";
 }
+
+function setAuthMessage(message) {
+  authStatus.textContent = message;
+}
+
+function showAuthGate() {
+  authScreen.hidden = false;
+  appShell.hidden = true;
+  googleSigninButton.disabled = false;
+}
+
+function grantAccess() {
+  authScreen.hidden = true;
+  appShell.hidden = false;
+}
+
+async function googleSignIn() {
+  googleSigninButton.disabled = true;
+  setAuthMessage("登入中...");
+  try {
+    await signInWithPopup(auth, googleProvider);
+  } catch (error) {
+    console.warn("Sign-in failed", error);
+    setAuthMessage("登入失敗，請重試");
+    showAuthGate();
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    showAuthGate();
+    return;
+  }
+  if (!ALLOWED_EMAILS.includes(user.email)) {
+    await signOut(auth);
+    setAuthMessage("此帳號沒有存取權限");
+    showAuthGate();
+    return;
+  }
+  grantAccess();
+  loadCloudData().finally(() => {
+    renderSyncStatus();
+  });
+});
 
 function normalizeWords(words) {
   const cleaned = Array.isArray(words)
@@ -601,12 +667,15 @@ function renderCompletionScreen() {
   const todayComplete = getTodayStars() >= 3;
   choiceGrid.innerHTML = "";
   instruction.textContent = "";
-  completionMessage.textContent = todayComplete
-    ? "今天 3 顆星都拿到了！還可以繼續練習。"
-    : `恭喜完成第${ordinalText(completedPracticeNumber)}個練習`;
+  confetti.hidden = !state.sessionPassed;
+  completionMessage.textContent = !state.sessionPassed
+    ? `這輪打完了，答錯比較多次，這次先不算星星，再試一次吧！`
+    : todayComplete
+      ? "今天 3 顆星都拿到了！還可以繼續練習。"
+      : `恭喜完成第${ordinalText(completedPracticeNumber)}個練習`;
   celebration.hidden = false;
   startButton.hidden = false;
-  startButton.textContent = todayComplete ? "繼續練習" : "開始下一個練習";
+  startButton.textContent = state.sessionPassed ? (todayComplete ? "繼續練習" : "開始下一個練習") : "再試一次";
   startButton.disabled = false;
   speakButton.hidden = true;
   nextButton.disabled = true;
@@ -904,27 +973,49 @@ function showPage(page) {
   if (page === "rewards") renderWeekGrid();
 }
 
+function revealCorrectChoice() {
+  choiceGrid.querySelectorAll(".choice-button").forEach((choiceButton) => {
+    choiceButton.disabled = true;
+    if (choiceButton.textContent === state.current.text) {
+      choiceButton.classList.add("correct");
+    }
+  });
+}
+
+function finishRound() {
+  state.answered = true;
+  state.practiced += 1;
+  if (state.practiced >= activeSessionLength()) {
+    state.sessionPassed = state.missed <= MAX_MISSES_FOR_STAR;
+    if (state.sessionPassed) addTodayStar();
+    state.sessionComplete = true;
+    state.sessionStarted = false;
+  } else {
+    nextButton.disabled = false;
+  }
+}
+
 function handleAnswer(button, selected) {
   if (state.answered) return;
 
   const isCorrect = selected.text === state.current.text;
 
   if (isCorrect) {
-    state.answered = true;
-    state.practiced += 1;
     state.score += 1;
-    if (state.practiced >= activeSessionLength()) {
-      addTodayStar();
-      state.sessionComplete = true;
-      state.sessionStarted = false;
-    }
     button.classList.add("correct");
     playCorrectFeedback();
-    nextButton.disabled = false;
+    finishRound();
   } else {
     button.classList.add("wrong");
     button.disabled = true;
+    state.wrongAttempts += 1;
     playWordAudio(state.current);
+
+    if (state.wrongAttempts >= MAX_ATTEMPTS_PER_WORD) {
+      state.missed += 1;
+      revealCorrectChoice();
+      finishRound();
+    }
   }
 
   renderStats();
@@ -935,6 +1026,7 @@ function nextRound() {
 
   state.current = pickWord();
   state.answered = false;
+  state.wrongAttempts = 0;
   nextButton.disabled = true;
   renderStats();
   renderPrompt();
@@ -945,6 +1037,8 @@ function nextRound() {
 function startPractice() {
   state.score = 0;
   state.practiced = 0;
+  state.missed = 0;
+  state.sessionPassed = false;
   state.recentIndexes = [];
   state.sessionComplete = false;
   state.sessionStarted = true;
@@ -955,6 +1049,8 @@ function startPractice() {
 function resetGame() {
   state.score = 0;
   state.practiced = 0;
+  state.missed = 0;
+  state.sessionPassed = false;
   state.sessionComplete = false;
   state.sessionStarted = false;
   state.recentIndexes = [];
@@ -984,6 +1080,8 @@ soundToggle.addEventListener("click", () => {
   state.soundOn = !state.soundOn;
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
 });
+googleSigninButton.addEventListener("click", googleSignIn);
+logoutButton.addEventListener("click", () => signOut(auth));
 
 renderGroupManager();
 renderProfileManager();
@@ -991,6 +1089,3 @@ renderProfileSelectors();
 renderWeekGrid();
 renderStats();
 renderSyncStatus();
-loadCloudData().finally(() => {
-  renderSyncStatus();
-});
