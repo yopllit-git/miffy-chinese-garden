@@ -109,6 +109,8 @@ const state = {
 
 const authScreen = document.querySelector("#auth-screen");
 const appShell = document.querySelector("#app-shell");
+const authLoading = document.querySelector("#auth-loading");
+const authInteractive = document.querySelector("#auth-interactive");
 const googleSigninButton = document.querySelector("#google-signin-button");
 const authStatus = document.querySelector("#auth-status");
 const logoutButton = document.querySelector("#logout-button");
@@ -402,6 +404,8 @@ function setAuthMessage(message) {
 function showAuthGate() {
   authScreen.hidden = false;
   appShell.hidden = true;
+  authLoading.hidden = true;
+  authInteractive.hidden = false;
   googleSigninButton.disabled = false;
 }
 
