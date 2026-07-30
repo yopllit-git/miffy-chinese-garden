@@ -29,7 +29,7 @@ const firebaseConfig = {
   appId: "1:46399762559:web:5464bd10ccb9e05fbb4f4a",
 };
 
-const ALLOWED_EMAILS = ["yopllit@gmail.com", "admin@lelechinese.com"];
+const ALLOWED_EMAILS = ["yopllit@gmail.com"];
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
