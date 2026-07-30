@@ -9,7 +9,8 @@ import {
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
@@ -414,13 +415,19 @@ async function googleSignIn() {
   googleSigninButton.disabled = true;
   setAuthMessage("登入中...");
   try {
-    await signInWithPopup(auth, googleProvider);
+    await signInWithRedirect(auth, googleProvider);
   } catch (error) {
     console.warn("Sign-in failed", error);
     setAuthMessage("登入失敗，請重試");
     showAuthGate();
   }
 }
+
+getRedirectResult(auth).catch((error) => {
+  console.warn("Sign-in redirect failed", error);
+  setAuthMessage("登入失敗，請重試");
+  showAuthGate();
+});
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
