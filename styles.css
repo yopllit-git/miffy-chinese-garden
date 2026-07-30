@@ -631,54 +631,8 @@ select {
   line-height: 1.15;
 }
 
-.mission-card {
-  align-items: stretch;
-  border: 1px solid #e6dcc9;
-  border-radius: 14px;
-  background: #fffaf0;
-  padding: 16px;
-}
-
-.mission-note {
-  margin: 6px 0 0;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.today-stars {
-  margin: 0;
-  border-radius: 999px;
-  background: #fff4d8;
-  color: #755200;
-  padding: 10px 14px;
-  font-size: 1.1rem;
-  font-weight: 900;
-  white-space: nowrap;
-  align-self: start;
-}
-
 .practice-setup {
-  display: grid;
-  grid-template-columns: minmax(160px, 0.8fr) minmax(0, 1.2fr);
-  gap: 14px;
-  align-items: end;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--green-soft);
-}
-
-.setup-copy h2 {
-  margin: 0 0 4px;
-  font-size: 1.45rem;
-  line-height: 1.15;
-}
-
-.setup-copy p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.92rem;
-  font-weight: 800;
+  margin-bottom: 4px;
 }
 
 .practice-controls {
@@ -1111,10 +1065,6 @@ select {
     font-size: 0.82rem;
   }
 
-  .practice-setup {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
 }
 
 @media (max-width: 420px) {
@@ -1152,13 +1102,5 @@ select {
   .reward-controls {
     grid-template-columns: 1fr auto;
     align-items: end;
-  }
-
-  .mission-card {
-    grid-template-columns: 1fr;
-  }
-
-  .today-stars {
-    justify-self: start;
   }
 }
