@@ -567,13 +567,13 @@ select {
 
 .app-title-icon {
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
 }
 
 #app-title {
-  font-size: clamp(1.2rem, 4vw, 1.7rem);
+  font-size: clamp(1.5rem, 5.5vw, 2.3rem);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
