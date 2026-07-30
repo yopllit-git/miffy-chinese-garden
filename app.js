@@ -151,6 +151,7 @@ const rewardTitle = document.querySelector("#reward-title");
 const weekSummary = document.querySelector("#week-summary");
 const leaderboardList = document.querySelector("#leaderboard-list");
 const leaderboardEmpty = document.querySelector("#leaderboard-empty");
+const debugLog = document.querySelector("#debug-log");
 const practiceProfileSelect = document.querySelector("#practice-profile-select");
 const rewardProfileSelect = document.querySelector("#reward-profile-select");
 const practiceCourseSelect = document.querySelector("#practice-course-select");
@@ -1072,7 +1073,10 @@ function showPage(page) {
 }
 
 async function awardLeaderboardPoint() {
-  if (!state.cloudReady || !cloudDocRef || !currentUid) return;
+  if (!state.cloudReady || !cloudDocRef || !currentUid) {
+    debugLog.textContent = `除錯：跳過加分 cloudReady=${state.cloudReady} cloudDocRef=${!!cloudDocRef} currentUid=${!!currentUid}`;
+    return;
+  }
 
   const profile = activeProfile();
   const entryRef = doc(db, "families", currentUid, "leaderboard", profile.id);
@@ -1082,8 +1086,10 @@ async function awardLeaderboardPoint() {
       { name: profile.name, points: increment(1), updatedAt: serverTimestamp() },
       { merge: true },
     );
+    debugLog.textContent = `除錯：已寫入 ${profile.name} 的排行榜分數`;
   } catch (error) {
     console.warn("Leaderboard update failed", error);
+    debugLog.textContent = `除錯：寫入失敗 ${error.code || ""} ${error.message || error}`;
   }
 }
 
@@ -1099,10 +1105,14 @@ async function renderLeaderboard() {
     entries = snapshot.docs.map((entrySnap) => entrySnap.data());
   } catch (error) {
     console.warn("Leaderboard load failed", error);
+    leaderboardEmpty.hidden = false;
+    leaderboardEmpty.textContent = `讀取失敗（除錯用）：${error.code || ""} ${error.message || error}`;
+    return;
   }
 
   if (!entries.length) {
     leaderboardEmpty.hidden = false;
+    leaderboardEmpty.textContent = "還沒有人得分，開始練習拿第一分吧！";
     return;
   }
 
