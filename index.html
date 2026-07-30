@@ -22,7 +22,7 @@
         </div>
         <div class="auth-interactive" id="auth-interactive" hidden>
           <h1>使用 Google 帳號登入</h1>
-          <p class="auth-copy">登入後，花園、玩家資料和星星會同步保存。</p>
+          <p class="auth-copy">登入後，花園、小園丁資料和星星會同步保存。</p>
           <button class="google-button" id="google-signin-button" type="button">
             <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
               <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
@@ -68,7 +68,7 @@
         <section class="practice-setup" aria-label="練習設定">
           <div class="practice-controls">
             <label>
-              <span>玩家</span>
+              <span>小園丁</span>
               <select id="practice-profile-select"></select>
             </label>
             <label>
@@ -79,14 +79,14 @@
         </section>
 
         <section class="prompt-area" aria-live="polite">
-          <p class="round-label" id="round-label">第 1 題</p>
+          <p class="round-label" id="round-label">第 1 顆種子</p>
           <div class="main-card">
-            <p class="instruction" id="instruction">聽一聽，選出你聽到的字。</p>
+            <p class="instruction" id="instruction">仔細聽一聽，找出正在發芽的那個字吧！</p>
             <div class="celebration" id="celebration" hidden>
               <p class="confetti" id="confetti" aria-hidden="true">🎉 ✨ 🎊</p>
-              <p id="completion-message">恭喜完成第一個練習</p>
+              <p id="completion-message">🌸 恭喜！今天第一朵花盛開了。</p>
             </div>
-            <button class="start-button" id="start-button" type="button">開始練習</button>
+            <button class="start-button" id="start-button" type="button">🌱 種下今天的種子</button>
             <button class="speak-button" id="speak-button" type="button">
               <span aria-hidden="true">▶</span>
               再聽一次
@@ -100,52 +100,52 @@
 
         <footer class="progress-row">
           <div>
-            <p class="mini-label">本輪答對</p>
+            <p class="mini-label">本輪開花</p>
             <p class="score" id="score">0</p>
           </div>
           <div class="progress-track" aria-label="本輪進度">
             <div class="progress-fill" id="progress-fill"></div>
           </div>
-          <button class="secondary-button" id="next-button" type="button" disabled>下一題</button>
+          <button class="secondary-button" id="next-button" type="button" disabled>下一顆</button>
         </footer>
       </section>
 
       <section class="reward-panel app-page" data-page-panel="rewards" aria-labelledby="reward-title" hidden>
         <section class="practice-controls reward-controls" aria-label="集點設定">
           <label>
-            <span>玩家</span>
+            <span>小園丁</span>
             <select id="reward-profile-select"></select>
           </label>
-          <p class="week-summary" id="week-summary">本週 0 / 21 ⭐</p>
+          <p class="week-summary" id="week-summary">這週你的花園開了 0 朵花🌸</p>
         </section>
         <div class="reward-hero">
-          <h2 id="reward-title">咪菲的中文集點卡</h2>
+          <h2 id="reward-title">咪菲的花園日記</h2>
         </div>
-        <div class="week-grid" id="week-grid" aria-label="本週集點"></div>
+        <div class="week-grid" id="week-grid" aria-label="本週花園日記"></div>
       </section>
 
       <section class="leaderboard-panel app-page" data-page-panel="leaderboard" aria-labelledby="leaderboard-title" hidden>
         <div class="reward-hero">
-          <h2 id="leaderboard-title">認字排行榜</h2>
-          <p class="leaderboard-note">完成一輪練習且答錯不超過上限就得 1 分</p>
+          <h2 id="leaderboard-title">花園展覽會</h2>
+          <p class="leaderboard-note">每次用心澆水，你的花園就會多開一朵花🌸 大家的花園，都在這裡展出！</p>
         </div>
-        <ol class="leaderboard-list" id="leaderboard-list" aria-label="排行榜"></ol>
-        <p class="leaderboard-empty" id="leaderboard-empty" hidden>還沒有人得分，開始練習拿第一分吧！</p>
+        <ol class="leaderboard-list" id="leaderboard-list" aria-label="花園展覽會"></ol>
+        <p class="leaderboard-empty" id="leaderboard-empty" hidden>展覽會還在佈置中，快去澆水，讓你的第一朵花在這裡展出吧！</p>
       </section>
 
       <section class="parent-panel app-page" data-page-panel="parent" aria-labelledby="parent-title" hidden>
         <header class="settings-head">
           <h2 id="parent-title">設定</h2>
-          <p class="settings-context" id="settings-context">管理玩家、花園與字詞</p>
+          <p class="settings-context" id="settings-context">在這裡幫小園丁準備花園</p>
         </header>
 
-        <section class="manager-card picker-card" aria-label="玩家與花園">
+        <section class="manager-card picker-card" aria-label="小園丁與花園">
           <div class="picker-row">
             <div class="picker-row-head">
-              <label class="eyebrow" for="profile-tabs">玩家</label>
-              <button class="add-chip" id="add-profile-button" type="button" title="新增玩家" aria-label="新增玩家">＋</button>
+              <label class="eyebrow" for="profile-tabs">小園丁</label>
+              <button class="add-chip" id="add-profile-button" type="button" title="新增小園丁" aria-label="新增小園丁">＋</button>
             </div>
-            <select class="picker-select" id="profile-tabs" aria-label="玩家清單"></select>
+            <select class="picker-select" id="profile-tabs" aria-label="小園丁清單"></select>
           </div>
 
           <div class="picker-row">
@@ -187,12 +187,12 @@
           </div>
 
           <details class="rename-drawer">
-            <summary>重新命名或刪除玩家</summary>
+            <summary>重新命名或刪除小園丁</summary>
             <div class="rename-row">
-              <input class="text-field" id="profile-name" type="text" maxlength="18" placeholder="玩家名稱" />
+              <input class="text-field" id="profile-name" type="text" maxlength="18" placeholder="小園丁名稱" />
               <div class="rename-actions">
                 <button class="small-button" id="save-profile-button" type="button">儲存名稱</button>
-                <button class="ghost-button" id="delete-profile-button" type="button">刪除玩家</button>
+                <button class="ghost-button" id="delete-profile-button" type="button">刪除小園丁</button>
               </div>
             </div>
           </details>

@@ -518,7 +518,7 @@ function normalizeProfiles(profiles, legacyStars = {}, fallbackGroups = null) {
           const groups = normalizeGroups(profile.groups || fallbackGroups || starterGroups);
           return {
             id: String(profile.id || `child-${index + 1}`).trim(),
-            name: String(profile.name || `玩家 ${index + 1}`).trim(),
+            name: String(profile.name || `小園丁 ${index + 1}`).trim(),
             dailyStars: profile.dailyStars || {},
             groups,
             activeGroupIndex: Math.min(Math.max(Number(profile.activeGroupIndex) || 0, 0), groups.length - 1),
@@ -712,6 +712,47 @@ function playCorrectFeedback() {
   });
 }
 
+const GROWTH_STAGE_MESSAGES = [
+  ["🌱 種子偷偷睜開了眼睛。", "🌱 小種子動了一下，好像在說「你好」。", "🌱 土壤裡傳來一點點動靜⋯⋯種子醒了！", "🌱 種子感覺到你的澆水，輕輕地甦醒了。"],
+  ["🌿 一根嫩綠的小芽鑽出了泥土。", "🌿 芽尖朝著陽光，悄悄地探出頭來。", "🌿 你看！小芽已經比剛才高了一點點。", "🌿 嫩芽輕輕搖擺，像在跟你揮手。"],
+  ["🍃 兩片翠綠的葉子舒展開來。", "🍃 微風吹過，葉子沙沙作響，像在唱歌。", "🍃 葉子裡流動著滿滿的元氣。", "🍃 葉子越長越茂盛，快要遮住陽光了！"],
+  ["🌼 一顆小小的花苞悄悄鼓了起來。", "🌼 花苞害羞地藏在葉子後面，快要忍不住了。", "🌼 再等一下下，花苞就要打開囉！", "🌼 你能感覺到嗎？花朵就要綻放了。"],
+  ["🌸 花朵「啵」的一聲，綻放了！", "🌸 好美的一朵花！你做到了。", "🌸 陽光灑在花瓣上，閃閃發光。", "🌸 這朵花，是你親手種出來的。"],
+];
+const RETRY_MESSAGES = ["再仔細看看，你可以的！", "沒關係，再靠近一點點試試看。", "種子還在等你找到它，再試一次！"];
+const PASS_MESSAGES = [
+  "🌸 你做到了！陽光灑落，一朵新的花在花園裡綻放。",
+  "🌸 今天的種子順利長成了美麗的花朵，你是最棒的小園丁！",
+  "🌸 花園裡又多了一份色彩，這都是你細心澆水的結果。",
+  "🌸 微風輕輕吹過你的花園，新開的花朵正在跳舞呢！",
+];
+const RETRY_ROUND_MESSAGES = [
+  "🌦 今天的種子需要多一點陽光才能開花，我們明天再試一次吧！",
+  "🌦 沒關係，有些種子要澆更多次水才會綻放。咪菲會一直陪著你！",
+  "🌦 這次種子還在努力生長，再澆一次水，它一定會開花的！",
+];
+let lastGrowthMessage = "";
+
+function pickFrom(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function pickGrowthMessage() {
+  const ratio = state.practiced / activeSessionLength();
+  const stageIndex = ratio > 0.85 ? 4 : ratio > 0.6 ? 3 : ratio > 0.4 ? 2 : ratio > 0.2 ? 1 : 0;
+  const pool = GROWTH_STAGE_MESSAGES[stageIndex].filter((message) => message !== lastGrowthMessage);
+  const message = pickFrom(pool.length ? pool : GROWTH_STAGE_MESSAGES[stageIndex]);
+  lastGrowthMessage = message;
+  return message;
+}
+
+function pickRevealMessage(answer) {
+  return pickFrom([
+    `這顆種子需要多一點陽光，答案是「${answer}」，我們澆下一顆吧！`,
+    `沒關係，園丁都是從練習中學會的。答案是「${answer}」。`,
+  ]);
+}
+
 function renderPrompt() {
   picturePrompt.hidden = true;
   characterPrompt.hidden = true;
@@ -719,7 +760,7 @@ function renderPrompt() {
   startButton.hidden = true;
   speakButton.hidden = false;
 
-  instruction.textContent = "聽一聽，選出你聽到的字。";
+  instruction.textContent = "仔細聽一聽，找出正在發芽的那個字吧！";
 }
 
 function ordinalText(number) {
@@ -734,9 +775,9 @@ function renderStartScreen() {
   state.answered = false;
   state.current = null;
   instruction.textContent = todayComplete
-    ? `今天 3 顆星已經拿到了，還想練習也可以。這次不會再加星星。`
-    : `準備好了就開始。完成 ${sessionLength} 題可以得到 1 顆星星。`;
-  roundLabel.textContent = todayComplete ? "今日完成" : "尚未開始";
+    ? `今天的花園已經開滿花囉！要不要再種一顆，讓花園更繽紛？`
+    : `今天想種下哪一顆種子呢？輕輕澆水，看看它會長成什麼樣子。`;
+  roundLabel.textContent = todayComplete ? "花園已盛開" : "花園在等你";
   score.textContent = state.score;
   progressFill.style.width = `${Math.min((state.practiced / sessionLength) * 100, 100)}%`;
   sessionLengthInput.value = sessionLength;
@@ -744,11 +785,11 @@ function renderStartScreen() {
   celebration.hidden = true;
   completionMessage.textContent = "";
   startButton.hidden = false;
-  startButton.textContent = todayComplete ? "繼續練習" : "開始練習";
+  startButton.textContent = todayComplete ? "🌸 再種一顆" : "🌱 種下今天的種子";
   startButton.disabled = false;
   speakButton.hidden = true;
   nextButton.disabled = true;
-  nextButton.textContent = "下一題";
+  nextButton.textContent = "下一顆";
 }
 
 function renderCompletionScreen() {
@@ -758,17 +799,17 @@ function renderCompletionScreen() {
   instruction.textContent = "";
   confetti.hidden = !state.sessionPassed;
   completionMessage.textContent = !state.sessionPassed
-    ? `這輪打完了，答錯比較多次，這次先不算星星，再試一次吧！`
+    ? pickFrom(RETRY_ROUND_MESSAGES)
     : todayComplete
-      ? "今天 3 顆星都拿到了！還可以繼續練習。"
-      : `恭喜完成第${ordinalText(completedPracticeNumber)}個練習`;
+      ? "🌸 今天的花園已經開滿花囉！還能繼續探索更多花朵。"
+      : pickFrom([`🌸 恭喜！今天第${ordinalText(completedPracticeNumber)}朵花盛開了，你的花園又更繽紛了一點。`, ...PASS_MESSAGES]);
   celebration.hidden = false;
   startButton.hidden = false;
-  startButton.textContent = state.sessionPassed ? (todayComplete ? "繼續練習" : "開始下一個練習") : "再試一次";
+  startButton.textContent = state.sessionPassed ? (todayComplete ? "🌸 再種一顆" : "🌱 種下下一顆") : "🌦 再澆一次水";
   startButton.disabled = false;
   speakButton.hidden = true;
   nextButton.disabled = true;
-  nextButton.textContent = "下一題";
+  nextButton.textContent = "下一顆";
 }
 
 function renderChoices() {
@@ -786,7 +827,7 @@ function renderChoices() {
 function renderStats() {
   const sessionLength = activeSessionLength();
   score.textContent = state.score;
-  roundLabel.textContent = `第 ${Math.min(state.practiced + 1, sessionLength)} / ${sessionLength} 題`;
+  roundLabel.textContent = `第 ${Math.min(state.practiced + 1, sessionLength)} 顆種子 / 共 ${sessionLength} 顆`;
   progressFill.style.width = `${Math.min((state.practiced / sessionLength) * 100, 100)}%`;
   sessionLengthInput.value = sessionLength;
   maxFailsInput.value = activeMaxFails();
@@ -797,7 +838,7 @@ function renderStats() {
   } else if (!state.sessionStarted) {
     renderStartScreen();
   } else {
-    nextButton.textContent = "下一題";
+    nextButton.textContent = "下一顆";
   }
 }
 
@@ -920,7 +961,7 @@ function addProfile() {
   const id = `child-${Date.now()}`;
   state.profiles.push({
     id,
-    name: `玩家 ${state.profiles.length + 1}`,
+    name: `小園丁 ${state.profiles.length + 1}`,
     dailyStars: {},
     groups: normalizeGroups(starterGroups),
     activeGroupIndex: 0,
@@ -1046,16 +1087,16 @@ function renderWeekGrid() {
     card.className = `day-card${stars >= 3 ? " complete" : ""}`;
     card.innerHTML = `
       <p class="day-name">週${label}</p>
-      <div class="day-stars" aria-label="${stars} 顆星">
-        ${[0, 1, 2].map((star) => `<span class="${star < stars ? "earned" : ""}">⭐</span>`).join("")}
+      <div class="day-stars" aria-label="開了 ${stars} 朵花">
+        ${[0, 1, 2].map((star) => `<span class="${star < stars ? "earned" : ""}">🌸</span>`).join("")}
       </div>
-      <p class="day-status">${stars >= 3 ? "完成" : `${stars} / 3`}</p>
+      <p class="day-status">${stars >= 3 ? "盛開" : `${stars} / 3 朵`}</p>
     `;
     weekGrid.append(card);
   });
 
-  rewardTitle.textContent = `${activeProfile().name}的中文集點卡`;
-  weekSummary.textContent = `本週 ${totalStars} / 21 ⭐`;
+  rewardTitle.textContent = `${activeProfile().name}的花園日記`;
+  weekSummary.textContent = `這週你的花園開了 ${totalStars} 朵花🌸`;
 }
 
 function showPage(page) {
@@ -1117,11 +1158,11 @@ async function renderLeaderboard() {
 
     const name = document.createElement("p");
     name.className = "leaderboard-name";
-    name.textContent = String(entry.name || "小朋友");
+    name.textContent = `${entry.name || "小園丁"}的花園`;
 
     const points = document.createElement("span");
     points.className = "leaderboard-points";
-    points.textContent = `${entry.points || 0} 分`;
+    points.textContent = `🌸 x ${entry.points || 0}`;
 
     item.append(rank, name, points);
     leaderboardList.append(item);
@@ -1163,6 +1204,7 @@ function handleAnswer(button, selected) {
     button.classList.add("correct");
     playCorrectFeedback();
     finishRound();
+    instruction.textContent = pickGrowthMessage();
   } else {
     button.classList.add("wrong");
     button.disabled = true;
@@ -1173,6 +1215,9 @@ function handleAnswer(button, selected) {
       state.missed += 1;
       revealCorrectChoice();
       finishRound();
+      instruction.textContent = pickRevealMessage(state.current.text);
+    } else {
+      instruction.textContent = pickFrom(RETRY_MESSAGES);
     }
   }
 
