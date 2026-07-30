@@ -401,6 +401,29 @@ function setAuthMessage(message) {
   authStatus.textContent = message;
 }
 
+const SIGNIN_FLAG_KEY = "miffy-signing-in";
+const SIGNIN_FLAG_MAX_AGE_MS = 20000;
+
+function markSignInStarted() {
+  localStorage.setItem(SIGNIN_FLAG_KEY, String(Date.now()));
+}
+
+function clearSignInFlag() {
+  localStorage.removeItem(SIGNIN_FLAG_KEY);
+}
+
+function isSignInRecentlyStarted() {
+  const startedAt = Number(localStorage.getItem(SIGNIN_FLAG_KEY));
+  return Number.isFinite(startedAt) && Date.now() - startedAt < SIGNIN_FLAG_MAX_AGE_MS;
+}
+
+function showAuthLoading() {
+  authScreen.hidden = false;
+  appShell.hidden = true;
+  authLoading.hidden = false;
+  authInteractive.hidden = true;
+}
+
 function showAuthGate() {
   authScreen.hidden = false;
   appShell.hidden = true;
@@ -417,10 +440,12 @@ function grantAccess() {
 async function googleSignIn() {
   googleSigninButton.disabled = true;
   setAuthMessage("登入中...");
+  markSignInStarted();
   try {
     await signInWithPopup(auth, googleProvider);
   } catch (error) {
     console.warn("Sign-in failed", error);
+    clearSignInFlag();
     setAuthMessage("登入失敗，請重試");
     showAuthGate();
   }
@@ -428,9 +453,14 @@ async function googleSignIn() {
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
+    if (isSignInRecentlyStarted()) {
+      showAuthLoading();
+      return;
+    }
     showAuthGate();
     return;
   }
+  clearSignInFlag();
   if (!ALLOWED_EMAILS.includes(user.email)) {
     await signOut(auth);
     setAuthMessage("此帳號沒有存取權限");
