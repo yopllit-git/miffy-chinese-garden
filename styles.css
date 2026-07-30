@@ -142,7 +142,7 @@ button {
   gap: 24px;
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 28px 0 calc(76px + env(safe-area-inset-bottom, 0px));
+  padding: 28px 0 calc(94px + env(safe-area-inset-bottom, 0px));
 }
 
 .learning-panel,
@@ -459,7 +459,7 @@ h1 {
 @media (max-width: 620px) {
   .app-shell {
     width: min(100% - 20px, 1180px);
-    padding: 10px 0 calc(76px + env(safe-area-inset-bottom, 0px));
+    padding: 10px 0 calc(94px + env(safe-area-inset-bottom, 0px));
   }
 
   .learning-panel,
@@ -591,23 +591,23 @@ select {
 .nav-button {
   --nav-accent: var(--green);
   flex: 1;
-  min-height: 60px;
+  min-height: 78px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 5px;
   border-radius: 0;
   border-top: 3px solid transparent;
   background: transparent;
   color: #a3aaa8;
   font-weight: 800;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .nav-icon {
-  font-size: 1.4rem;
+  font-size: 1.9rem;
   line-height: 1;
 }
 
