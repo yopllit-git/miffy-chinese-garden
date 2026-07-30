@@ -17,7 +17,7 @@ import {
 
 const firebaseConfig = {
   apiKey: "AIzaSyDjXk4wdZWOi8CxX3Quz3eJLCN89UGeCsQ",
-  authDomain: "miffy-chinese-garden.firebaseapp.com",
+  authDomain: "miffy-chinese-garden.vercel.app",
   projectId: "miffy-chinese-garden",
   storageBucket: "miffy-chinese-garden.firebasestorage.app",
   messagingSenderId: "46399762559",
