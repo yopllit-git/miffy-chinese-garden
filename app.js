@@ -777,7 +777,7 @@ function renderStartScreen() {
   instruction.textContent = todayComplete
     ? `今天的花園已經開滿花囉！要不要再種一顆，讓花園更繽紛？`
     : `今天想種下哪一顆種子呢？輕輕澆水，看看它會長成什麼樣子。`;
-  roundLabel.textContent = todayComplete ? "花園已盛開" : "花園在等你";
+  roundLabel.hidden = true;
   score.textContent = state.score;
   progressFill.style.width = `${Math.min((state.practiced / sessionLength) * 100, 100)}%`;
   sessionLengthInput.value = sessionLength;
@@ -797,6 +797,7 @@ function renderCompletionScreen() {
   const todayComplete = getTodayStars() >= 3;
   choiceGrid.innerHTML = "";
   instruction.textContent = "";
+  roundLabel.hidden = true;
   confetti.hidden = !state.sessionPassed;
   completionMessage.textContent = !state.sessionPassed
     ? pickFrom(RETRY_ROUND_MESSAGES)
@@ -838,6 +839,7 @@ function renderStats() {
   } else if (!state.sessionStarted) {
     renderStartScreen();
   } else {
+    roundLabel.hidden = false;
     nextButton.textContent = "下一顆";
   }
 }

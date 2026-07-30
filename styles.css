@@ -665,6 +665,7 @@ select {
 }
 
 .reward-controls {
+  grid-template-columns: 1fr;
   max-width: 360px;
   margin-top: 14px;
   margin-bottom: 0;
@@ -1033,14 +1034,14 @@ select {
 }
 
 .week-summary {
-  align-self: start;
-  justify-self: start;
-  margin: 0;
+  width: fit-content;
+  margin: 16px auto 0;
   border-radius: 999px;
   background: #fff4d8;
   color: #755200;
-  padding: 9px 12px;
+  padding: 9px 14px;
   font-weight: 900;
+  text-align: center;
 }
 
 @media (max-width: 760px) {
