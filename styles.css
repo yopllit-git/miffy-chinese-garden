@@ -208,16 +208,6 @@ h1 {
   letter-spacing: 0;
 }
 
-.icon-button {
-  flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #eaf6ee;
-  border: 1px solid #c9dfd0;
-  font-size: 1.45rem;
-}
-
 .secondary-button,
 .speak-button {
   border-radius: 14px;
@@ -354,8 +344,7 @@ h1 {
 .choice-button:focus-visible,
 .speak-button:focus-visible,
 .start-button:focus-visible,
-.secondary-button:focus-visible,
-.icon-button:focus-visible {
+.secondary-button:focus-visible {
   outline: 4px solid rgba(63, 127, 191, 0.35);
   outline-offset: 3px;
 }
@@ -569,10 +558,25 @@ select {
   padding: 18px 22px;
 }
 
-.header-actions {
+.app-title-row {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.app-title-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+#app-title {
+  font-size: clamp(1.2rem, 4vw, 1.7rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .app-nav {
@@ -710,6 +714,14 @@ select {
 
 .picker-card + .editor-card {
   margin-top: 16px;
+}
+
+.account-card {
+  margin-top: 16px;
+}
+
+.account-card .ghost-button {
+  width: 100%;
 }
 
 .settings-head {
@@ -1073,12 +1085,6 @@ select {
     grid-template-columns: 1fr auto;
     align-items: start;
     padding: 14px;
-  }
-
-  .header-actions {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    justify-items: end;
   }
 
   .topbar {

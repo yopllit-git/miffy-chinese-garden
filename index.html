@@ -39,14 +39,9 @@
 
     <main class="app-shell" id="app-shell" hidden>
       <header class="app-header">
-        <div>
+        <div class="app-title-row">
+          <img src="./icons/app-icon-192.png" alt="" class="app-title-icon" />
           <h1 id="app-title">咪菲認字小花園</h1>
-        </div>
-        <div class="header-actions">
-          <button class="text-button" id="logout-button" type="button">登出</button>
-          <button class="icon-button" id="sound-toggle" type="button" aria-label="開關聲音">
-            🔊
-          </button>
         </div>
       </header>
 
@@ -228,6 +223,10 @@
             <button class="secondary-button" id="save-group-button" type="button">儲存課程</button>
             <button class="ghost-button" id="delete-group-button" type="button">刪除課程</button>
           </div>
+        </section>
+
+        <section class="manager-card account-card" aria-label="帳號">
+          <button class="ghost-button" id="logout-button" type="button">登出</button>
         </section>
       </section>
     </main>

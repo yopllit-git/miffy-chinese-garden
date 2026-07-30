@@ -137,7 +137,6 @@ const nextButton = document.querySelector("#next-button");
 const score = document.querySelector("#score");
 const roundLabel = document.querySelector("#round-label");
 const progressFill = document.querySelector("#progress-fill");
-const soundToggle = document.querySelector("#sound-toggle");
 const navButtons = document.querySelectorAll(".nav-button");
 const pagePanels = document.querySelectorAll(".app-page");
 const groupTabs = document.querySelector("#group-tabs");
@@ -1235,10 +1234,6 @@ saveProfileButton.addEventListener("click", saveCurrentProfile);
 deleteProfileButton.addEventListener("click", deleteProfile);
 sessionLengthInput.addEventListener("change", updateSessionLength);
 maxFailsInput.addEventListener("change", updateMaxFails);
-soundToggle.addEventListener("click", () => {
-  state.soundOn = !state.soundOn;
-  soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
-});
 googleSigninButton.addEventListener("click", googleSignIn);
 logoutButton.addEventListener("click", () => signOut(auth));
 
