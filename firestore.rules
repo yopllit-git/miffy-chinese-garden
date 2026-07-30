@@ -16,6 +16,14 @@ service cloud.firestore {
       }
     }
 
+    // Collection-group rule: the nested rule above only covers reads scoped
+    // to one family's leaderboard subcollection. The cross-family leaderboard
+    // uses collectionGroup("leaderboard"), which needs this wildcard rule to
+    // be permitted at all.
+    match /{path=**}/leaderboard/{entryId} {
+      allow read: if isAllowedUser();
+    }
+
     // Legacy single-family doc, kept read-only so yopllit@gmail.com's
     // one-time migration to families/{uid} can still read it.
     match /families/miffy-chinese-garden {
