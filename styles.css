@@ -667,12 +667,7 @@ select {
 .reward-controls {
   grid-template-columns: 1fr;
   max-width: 360px;
-  margin-top: 14px;
-  margin-bottom: 0;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #f8fbf8;
+  margin-bottom: 4px;
 }
 
 .prompt-area {
