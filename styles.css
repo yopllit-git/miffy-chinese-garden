@@ -10,8 +10,8 @@
   --coral: #e86f5c;
   --gold: #f5b947;
   --blue: #3f7fbf;
-  --shadow: 0 20px 50px rgba(38, 52, 49, 0.12);
-  --soft-shadow: 0 12px 28px rgba(38, 52, 49, 0.08);
+  --shadow: 0 8px 24px rgba(38, 52, 49, 0.07);
+  --soft-shadow: 0 2px 12px rgba(38, 52, 49, 0.05);
 }
 
 * {
@@ -51,7 +51,7 @@ button {
 .auth-card {
   width: min(100%, 420px);
   border: 1px solid rgba(217, 225, 220, 0.9);
-  border-radius: 8px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow);
   padding: 28px;
@@ -102,7 +102,7 @@ button {
 .google-button {
   width: 100%;
   min-height: 54px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: white;
   border: 1px solid var(--line);
   color: var(--ink);
@@ -127,7 +127,7 @@ button {
 
 .text-button {
   min-height: 38px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: #eef4f8;
   border: 1px solid #d2dee8;
   color: #385166;
@@ -142,7 +142,7 @@ button {
   gap: 24px;
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 28px 0;
+  padding: 28px 0 calc(76px + env(safe-area-inset-bottom, 0px));
 }
 
 .learning-panel,
@@ -155,14 +155,14 @@ button {
 .learning-panel {
   min-height: calc(100vh - 56px);
   padding: 24px;
-  border-radius: 8px;
+  border-radius: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
 .parent-panel {
-  border-radius: 8px;
+  border-radius: 20px;
   padding: 22px;
   align-self: start;
   position: sticky;
@@ -220,7 +220,7 @@ h1 {
 
 .secondary-button,
 .speak-button {
-  border-radius: 8px;
+  border-radius: 14px;
   min-height: 44px;
   font-weight: 800;
 }
@@ -234,7 +234,7 @@ h1 {
 
 .garden-scene {
   min-height: 220px;
-  border-radius: 8px;
+  border-radius: 14px;
   background:
     linear-gradient(#bfe6ff 0 42%, #9acb80 42% 100%);
   border: 1px solid #9dc9a7;
@@ -260,7 +260,7 @@ h1 {
 
 .main-card {
   min-height: 220px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--paper);
   border: 1px solid #eadbc7;
   padding: 24px;
@@ -288,7 +288,7 @@ h1 {
 
 .start-button {
   min-height: 56px;
-  border-radius: 8px;
+  border-radius: 14px;
   padding: 0 26px;
   background: var(--green);
   color: white;
@@ -343,7 +343,7 @@ h1 {
 
 .choice-button {
   min-height: 112px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--panel);
   border: 2px solid var(--line);
   font-size: clamp(2rem, 6vw, 4rem);
@@ -431,7 +431,7 @@ h1 {
 .stats {
   margin-top: 16px;
   padding: 14px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: #f3f7f5;
 }
 
@@ -459,7 +459,7 @@ h1 {
 @media (max-width: 620px) {
   .app-shell {
     width: min(100% - 20px, 1180px);
-    padding: 10px 0;
+    padding: 10px 0 calc(76px + env(safe-area-inset-bottom, 0px));
   }
 
   .learning-panel,
@@ -553,11 +553,11 @@ select {
 }
 
 .app-header,
-.app-nav,
-.reward-panel {
+.reward-panel,
+.leaderboard-panel {
   background: rgba(255, 255, 255, 0.86);
   border: 1px solid rgba(217, 225, 220, 0.9);
-  border-radius: 8px;
+  border-radius: 20px;
   box-shadow: var(--shadow);
 }
 
@@ -575,38 +575,46 @@ select {
   gap: 10px;
 }
 
-.user-pill {
-  max-width: 160px;
-  margin: 0;
-  border-radius: 999px;
-  background: #edf7f0;
-  color: #28573f;
-  padding: 8px 10px;
-  font-size: 0.82rem;
-  font-weight: 900;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .app-nav {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding: 8px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  background: white;
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -2px 16px rgba(38, 52, 49, 0.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .nav-button {
-  min-height: 46px;
-  border-radius: 8px;
+  --nav-accent: var(--green);
+  flex: 1;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 0;
+  border-top: 3px solid transparent;
   background: transparent;
-  color: #385166;
-  font-weight: 900;
+  color: #a3aaa8;
+  font-weight: 800;
+  font-size: 0.72rem;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.nav-icon {
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 .nav-button.active {
-  background: var(--green);
-  color: white;
+  border-top-color: var(--nav-accent);
+  background: color-mix(in srgb, var(--nav-accent) 12%, transparent);
+  color: var(--nav-accent);
 }
 
 .app-page:not(.active) {
@@ -626,7 +634,7 @@ select {
 .mission-card {
   align-items: stretch;
   border: 1px solid #e6dcc9;
-  border-radius: 8px;
+  border-radius: 14px;
   background: #fffaf0;
   padding: 16px;
 }
@@ -656,7 +664,7 @@ select {
   align-items: end;
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--green-soft);
 }
 
@@ -691,7 +699,7 @@ select {
   width: 100%;
   min-height: 44px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: white;
   padding: 0 12px;
   color: var(--ink);
@@ -704,7 +712,7 @@ select {
   margin-bottom: 0;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: #f8fbf8;
 }
 
@@ -714,7 +722,7 @@ select {
 
 .ghost-button,
 .small-button {
-  border-radius: 8px;
+  border-radius: 14px;
   min-height: 44px;
   background: #eef4f8;
   border: 1px solid #d2dee8;
@@ -740,7 +748,7 @@ select {
 
 .manager-card {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.92);
   padding: 18px;
   box-shadow: var(--soft-shadow);
@@ -805,7 +813,7 @@ select {
   min-height: 46px;
   margin-top: 8px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background:
     url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2363706d"><path d="M5.5 7.5l4.5 5 4.5-5z"/></svg>')
     no-repeat right 14px center / 16px;
@@ -926,7 +934,7 @@ select {
 .word-editor {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: white;
 }
 
@@ -961,7 +969,7 @@ select {
 
 .day-card {
   min-height: 112px;
-  border-radius: 8px;
+  border-radius: 14px;
   border: 1px solid var(--line);
   background: white;
   padding: 10px 6px;
@@ -998,6 +1006,66 @@ select {
   opacity: 1;
 }
 
+.leaderboard-panel {
+  padding: 18px;
+}
+
+.leaderboard-note {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.leaderboard-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: white;
+  padding: 12px 14px;
+}
+
+.leaderboard-item.top-rank {
+  background: #fff8e6;
+  border-color: var(--gold);
+}
+
+.leaderboard-rank {
+  min-width: 28px;
+  font-weight: 900;
+  color: var(--muted);
+  text-align: center;
+}
+
+.leaderboard-name {
+  flex: 1;
+  margin: 0;
+  font-weight: 900;
+}
+
+.leaderboard-points {
+  font-weight: 900;
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.leaderboard-empty {
+  color: var(--muted);
+  font-weight: 700;
+  text-align: center;
+  margin-top: 24px;
+}
+
 .week-summary {
   align-self: end;
   justify-self: end;
@@ -1016,7 +1084,8 @@ select {
     gap: 4px;
   }
 
-  .reward-panel {
+  .reward-panel,
+  .leaderboard-panel {
     padding: 14px 10px;
   }
 
@@ -1060,20 +1129,6 @@ select {
     display: grid;
     grid-template-columns: 1fr auto;
     justify-items: end;
-  }
-
-  .user-pill {
-    grid-column: 1 / -1;
-    max-width: 136px;
-  }
-
-  .app-nav {
-    gap: 6px;
-  }
-
-  .nav-button {
-    min-height: 44px;
-    font-size: 0.95rem;
   }
 
   .topbar {

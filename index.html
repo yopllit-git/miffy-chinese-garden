@@ -43,7 +43,6 @@
           <h1 id="app-title">咪菲認字小花園</h1>
         </div>
         <div class="header-actions">
-          <p class="user-pill" id="user-pill">同步中...</p>
           <button class="text-button" id="logout-button" type="button">登出</button>
           <button class="icon-button" id="sound-toggle" type="button" aria-label="開關聲音">
             🔊
@@ -52,9 +51,22 @@
       </header>
 
       <nav class="app-nav" aria-label="主要頁面">
-        <button class="nav-button active" type="button" data-page="practice">練習</button>
-        <button class="nav-button" type="button" data-page="rewards">本週集點</button>
-        <button class="nav-button" type="button" data-page="parent">設定</button>
+        <button class="nav-button active" type="button" data-page="practice" style="--nav-accent: var(--green)">
+          <span class="nav-icon" aria-hidden="true">📝</span>
+          <span class="nav-label">練習</span>
+        </button>
+        <button class="nav-button" type="button" data-page="rewards" style="--nav-accent: var(--gold)">
+          <span class="nav-icon" aria-hidden="true">🎁</span>
+          <span class="nav-label">本週集點</span>
+        </button>
+        <button class="nav-button" type="button" data-page="leaderboard" style="--nav-accent: var(--coral)">
+          <span class="nav-icon" aria-hidden="true">🏆</span>
+          <span class="nav-label">排行榜</span>
+        </button>
+        <button class="nav-button" type="button" data-page="parent" style="--nav-accent: var(--blue)">
+          <span class="nav-icon" aria-hidden="true">⚙️</span>
+          <span class="nav-label">設定</span>
+        </button>
       </nav>
 
       <section class="learning-panel app-page active" data-page-panel="practice" aria-labelledby="app-title">
@@ -127,6 +139,15 @@
           <h2 id="reward-title">咪菲的中文集點卡</h2>
         </div>
         <div class="week-grid" id="week-grid" aria-label="本週集點"></div>
+      </section>
+
+      <section class="leaderboard-panel app-page" data-page-panel="leaderboard" aria-labelledby="leaderboard-title" hidden>
+        <div class="reward-hero">
+          <h2 id="leaderboard-title">認字排行榜</h2>
+          <p class="leaderboard-note">完成一輪練習且答錯不超過上限就得 1 分</p>
+        </div>
+        <ol class="leaderboard-list" id="leaderboard-list" aria-label="排行榜"></ol>
+        <p class="leaderboard-empty" id="leaderboard-empty" hidden>還沒有人得分，開始練習拿第一分吧！</p>
       </section>
 
       <section class="parent-panel app-page" data-page-panel="parent" aria-labelledby="parent-title" hidden>

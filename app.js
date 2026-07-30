@@ -1,8 +1,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import {
+  collectionGroup,
   doc,
   getDoc,
+  getDocs,
   getFirestore,
+  increment,
+  limit,
+  orderBy,
+  query,
   serverTimestamp,
   setDoc,
 } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
@@ -23,13 +29,17 @@ const firebaseConfig = {
   appId: "1:46399762559:web:5464bd10ccb9e05fbb4f4a",
 };
 
-const ALLOWED_EMAILS = ["yopllit@gmail.com"];
+const ALLOWED_EMAILS = ["yopllit@gmail.com", "admin@lelechinese.com"];
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const auth = getAuth(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
-const cloudDocRef = doc(db, "families", "miffy-chinese-garden");
+const LEGACY_FAMILY_DOC_ID = "miffy-chinese-garden";
+const LEGACY_OWNER_EMAIL = "yopllit@gmail.com";
+let cloudDocRef = null;
+let currentUid = null;
+const LEADERBOARD_LIMIT = 50;
 const DEFAULT_SESSION_LENGTH = 15;
 const MIN_SESSION_LENGTH = 5;
 const MAX_SESSION_LENGTH = 30;
@@ -114,7 +124,6 @@ const authInteractive = document.querySelector("#auth-interactive");
 const googleSigninButton = document.querySelector("#google-signin-button");
 const authStatus = document.querySelector("#auth-status");
 const logoutButton = document.querySelector("#logout-button");
-const userPill = document.querySelector("#user-pill");
 const choiceGrid = document.querySelector("#choice-grid");
 const instruction = document.querySelector("#instruction");
 const picturePrompt = document.querySelector("#picture-prompt");
@@ -143,6 +152,8 @@ const todayStars = document.querySelector("#today-stars");
 const weekGrid = document.querySelector("#week-grid");
 const rewardTitle = document.querySelector("#reward-title");
 const weekSummary = document.querySelector("#week-summary");
+const leaderboardList = document.querySelector("#leaderboard-list");
+const leaderboardEmpty = document.querySelector("#leaderboard-empty");
 const practiceProfileSelect = document.querySelector("#practice-profile-select");
 const rewardProfileSelect = document.querySelector("#reward-profile-select");
 const practiceCourseSelect = document.querySelector("#practice-course-select");
@@ -335,7 +346,6 @@ function persistLocalOnly() {
 
 async function loadCloudData() {
   state.cloudLoading = true;
-  renderSyncStatus();
 
   try {
     const snapshot = await getDoc(cloudDocRef);
@@ -393,10 +403,6 @@ async function saveCloudData() {
   });
 }
 
-function renderSyncStatus() {
-  userPill.textContent = state.cloudLoading ? "同步中..." : state.cloudReady ? "已同步" : "家庭模式";
-}
-
 function setAuthMessage(message) {
   authStatus.textContent = message;
 }
@@ -451,6 +457,23 @@ async function googleSignIn() {
   }
 }
 
+async function migrateLegacyDataIfNeeded(user) {
+  if (user.email !== LEGACY_OWNER_EMAIL) return;
+
+  try {
+    const existing = await getDoc(cloudDocRef);
+    if (existing.exists()) return;
+
+    const legacyRef = doc(db, "families", LEGACY_FAMILY_DOC_ID);
+    const legacySnap = await getDoc(legacyRef);
+    if (!legacySnap.exists()) return;
+
+    await setDoc(cloudDocRef, { ...legacySnap.data(), updatedAt: serverTimestamp() });
+  } catch (error) {
+    console.warn("Legacy data migration failed", error);
+  }
+}
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     if (isSignInRecentlyStarted()) {
@@ -467,10 +490,11 @@ onAuthStateChanged(auth, async (user) => {
     showAuthGate();
     return;
   }
+  currentUid = user.uid;
+  cloudDocRef = doc(db, "families", currentUid);
   grantAccess();
-  loadCloudData().finally(() => {
-    renderSyncStatus();
-  });
+  await migrateLegacyDataIfNeeded(user);
+  loadCloudData();
 });
 
 function normalizeWords(words) {
@@ -1051,6 +1075,63 @@ function showPage(page) {
     panel.hidden = !isActive;
   });
   if (page === "rewards") renderWeekGrid();
+  if (page === "leaderboard") renderLeaderboard();
+}
+
+async function awardLeaderboardPoint() {
+  if (!state.cloudReady || !cloudDocRef || !currentUid) return;
+
+  const profile = activeProfile();
+  const entryRef = doc(db, "families", currentUid, "leaderboard", profile.id);
+  try {
+    await setDoc(
+      entryRef,
+      { name: profile.name, points: increment(1), updatedAt: serverTimestamp() },
+      { merge: true },
+    );
+  } catch (error) {
+    console.warn("Leaderboard update failed", error);
+  }
+}
+
+async function renderLeaderboard() {
+  leaderboardList.innerHTML = "";
+  leaderboardEmpty.hidden = true;
+
+  let entries = [];
+  try {
+    const snapshot = await getDocs(
+      query(collectionGroup(db, "leaderboard"), orderBy("points", "desc"), limit(LEADERBOARD_LIMIT)),
+    );
+    entries = snapshot.docs.map((entrySnap) => entrySnap.data());
+  } catch (error) {
+    console.warn("Leaderboard load failed", error);
+  }
+
+  if (!entries.length) {
+    leaderboardEmpty.hidden = false;
+    return;
+  }
+
+  entries.forEach((entry, index) => {
+    const item = document.createElement("li");
+    item.className = `leaderboard-item${index < 3 ? " top-rank" : ""}`;
+
+    const rank = document.createElement("span");
+    rank.className = "leaderboard-rank";
+    rank.textContent = String(index + 1);
+
+    const name = document.createElement("p");
+    name.className = "leaderboard-name";
+    name.textContent = String(entry.name || "小朋友");
+
+    const points = document.createElement("span");
+    points.className = "leaderboard-points";
+    points.textContent = `${entry.points || 0} 分`;
+
+    item.append(rank, name, points);
+    leaderboardList.append(item);
+  });
 }
 
 function revealCorrectChoice() {
@@ -1067,7 +1148,10 @@ function finishRound() {
   state.practiced += 1;
   if (state.practiced >= activeSessionLength()) {
     state.sessionPassed = state.missed <= activeMaxFails();
-    if (state.sessionPassed) addTodayStar();
+    if (state.sessionPassed) {
+      addTodayStar();
+      awardLeaderboardPoint();
+    }
     state.sessionComplete = true;
     state.sessionStarted = false;
   } else {
@@ -1169,4 +1253,3 @@ renderProfileManager();
 renderProfileSelectors();
 renderWeekGrid();
 renderStats();
-renderSyncStatus();

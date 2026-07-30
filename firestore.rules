@@ -2,9 +2,25 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAllowedUser() {
+      return request.auth != null
+        && request.auth.token.email in ['yopllit@gmail.com', 'admin@lelechinese.com'];
+    }
+
+    match /families/{uid} {
+      allow read, write: if isAllowedUser() && request.auth.uid == uid;
+
+      match /leaderboard/{entryId} {
+        allow read: if isAllowedUser();
+        allow write: if isAllowedUser() && request.auth.uid == uid;
+      }
+    }
+
+    // Legacy single-family doc, kept read-only so yopllit@gmail.com's
+    // one-time migration to families/{uid} can still read it.
     match /families/miffy-chinese-garden {
-      allow read, write: if request.auth != null
-        && request.auth.token.email in ['yopllit@gmail.com'];
+      allow read: if request.auth != null && request.auth.token.email == 'yopllit@gmail.com';
+      allow write: if false;
     }
   }
 }
