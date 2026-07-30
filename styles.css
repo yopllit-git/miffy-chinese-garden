@@ -1033,15 +1033,14 @@ select {
 }
 
 .week-summary {
-  align-self: end;
-  justify-self: end;
+  align-self: start;
+  justify-self: start;
   margin: 0;
   border-radius: 999px;
   background: #fff4d8;
   color: #755200;
   padding: 9px 12px;
   font-weight: 900;
-  white-space: nowrap;
 }
 
 @media (max-width: 760px) {
@@ -1103,10 +1102,5 @@ select {
 
   .practice-controls {
     grid-template-columns: 1fr;
-  }
-
-  .reward-controls {
-    grid-template-columns: 1fr auto;
-    align-items: end;
   }
 }
