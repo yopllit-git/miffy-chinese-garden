@@ -34,7 +34,9 @@ const DEFAULT_SESSION_LENGTH = 15;
 const MIN_SESSION_LENGTH = 5;
 const MAX_SESSION_LENGTH = 30;
 const MAX_ATTEMPTS_PER_WORD = 2;
-const MAX_MISSES_FOR_STAR = 2;
+const DEFAULT_MAX_FAILS = 3;
+const MIN_MAX_FAILS = 1;
+const MAX_MAX_FAILS = 10;
 
 const audioByText = {
   我: "wo.wav",
@@ -100,6 +102,7 @@ const state = {
   profiles: loadProfiles(),
   activeProfileId: loadActiveProfileId(),
   sessionLength: loadSessionLength(),
+  maxFails: loadMaxFails(),
   cloudReady: false,
   cloudLoading: false,
 };
@@ -147,6 +150,7 @@ const saveProfileButton = document.querySelector("#save-profile-button");
 const deleteProfileButton = document.querySelector("#delete-profile-button");
 const profileNameInput = document.querySelector("#profile-name");
 const sessionLengthInput = document.querySelector("#session-length");
+const maxFailsInput = document.querySelector("#max-fails");
 const settingsContext = document.querySelector("#settings-context");
 
 let audioContext;
@@ -229,6 +233,24 @@ function saveSessionLength() {
   saveLocalData();
 }
 
+function clampMaxFails(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return DEFAULT_MAX_FAILS;
+  return Math.min(Math.max(Math.round(number), MIN_MAX_FAILS), MAX_MAX_FAILS);
+}
+
+function loadMaxFails() {
+  return clampMaxFails(localStorage.getItem("miffy-max-fails") || DEFAULT_MAX_FAILS);
+}
+
+function saveMaxFails() {
+  const profile = activeProfile();
+  profile.maxFails = clampMaxFails(profile.maxFails || state.maxFails);
+  state.maxFails = profile.maxFails;
+  localStorage.setItem("miffy-max-fails", String(state.maxFails));
+  saveLocalData();
+}
+
 function saveProfiles() {
   const profile = activeProfile();
   profile.groups = activeGroups();
@@ -289,6 +311,7 @@ function mergeProfiles(localProfiles, cloudProfiles, legacyStars = {}, fallbackG
     existing.dailyStars = mergeDailyStars(localProfile.dailyStars, existing.dailyStars);
     existing.groups = mergeGroups(localProfile.groups, existing.groups);
     existing.sessionLength = clampSessionLength(localProfile.sessionLength || existing.sessionLength);
+    existing.maxFails = clampMaxFails(localProfile.maxFails || existing.maxFails);
     existing.activeGroupIndex = Math.min(existing.activeGroupIndex || 0, existing.groups.length - 1);
   });
 
@@ -299,11 +322,13 @@ function persistLocalOnly() {
   state.groups = activeGroups();
   state.activeGroupIndex = activeGroupIndex();
   state.sessionLength = activeSessionLength();
+  state.maxFails = activeMaxFails();
   localStorage.setItem("miffy-word-groups", JSON.stringify(state.groups));
   localStorage.setItem("miffy-active-group", String(state.activeGroupIndex));
   localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
   localStorage.setItem("miffy-active-profile", state.activeProfileId);
   localStorage.setItem("miffy-session-length", String(state.sessionLength));
+  localStorage.setItem("miffy-max-fails", String(state.maxFails));
 }
 
 async function loadCloudData() {
@@ -322,6 +347,7 @@ async function loadCloudData() {
       state.groups = activeGroups();
       state.activeGroupIndex = activeGroupIndex();
       state.sessionLength = activeSessionLength();
+      state.maxFails = activeMaxFails();
       persistLocalOnly();
     }
 
@@ -346,6 +372,7 @@ async function saveCloudData() {
   state.groups = activeGroups();
   state.activeGroupIndex = activeGroupIndex();
   state.sessionLength = activeSessionLength();
+  state.maxFails = activeMaxFails();
 
   await setDoc(
     cloudDocRef,
@@ -355,6 +382,7 @@ async function saveCloudData() {
       profiles: state.profiles,
       activeProfileId: state.activeProfileId,
       sessionLength: state.sessionLength,
+      maxFails: state.maxFails,
       updatedAt: serverTimestamp(),
     },
     { merge: true },
@@ -440,6 +468,7 @@ function normalizeProfiles(profiles, legacyStars = {}, fallbackGroups = null) {
             groups,
             activeGroupIndex: Math.min(Math.max(Number(profile.activeGroupIndex) || 0, 0), groups.length - 1),
             sessionLength: clampSessionLength(profile.sessionLength || loadSessionLength()),
+            maxFails: clampMaxFails(profile.maxFails || loadMaxFails()),
           };
         })
         .filter((profile) => profile.id && profile.name)
@@ -454,6 +483,7 @@ function normalizeProfiles(profiles, legacyStars = {}, fallbackGroups = null) {
     groups,
     activeGroupIndex: 0,
     sessionLength: loadSessionLength(),
+    maxFails: loadMaxFails(),
   }];
 }
 
@@ -470,6 +500,7 @@ function activeProfile() {
   if (!profile.groups) profile.groups = normalizeGroups(state.groups || starterGroups);
   profile.activeGroupIndex = Math.min(Math.max(Number(profile.activeGroupIndex) || 0, 0), profile.groups.length - 1);
   profile.sessionLength = clampSessionLength(profile.sessionLength || state.sessionLength || DEFAULT_SESSION_LENGTH);
+  profile.maxFails = clampMaxFails(profile.maxFails || state.maxFails || DEFAULT_MAX_FAILS);
   return profile;
 }
 
@@ -489,6 +520,10 @@ function setActiveGroupIndex(index) {
 
 function activeSessionLength() {
   return activeProfile().sessionLength;
+}
+
+function activeMaxFails() {
+  return activeProfile().maxFails;
 }
 
 function renderSettingsContext() {
@@ -652,6 +687,7 @@ function renderStartScreen() {
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
   missionTitle.textContent = `完成 ${sessionLength} 題`;
   sessionLengthInput.value = sessionLength;
+  maxFailsInput.value = activeMaxFails();
   celebration.hidden = true;
   completionMessage.textContent = "";
   startButton.hidden = false;
@@ -702,6 +738,7 @@ function renderStats() {
   todayStars.textContent = `${getTodayStars()} / 3 ⭐`;
   missionTitle.textContent = `完成 ${sessionLength} 題`;
   sessionLengthInput.value = sessionLength;
+  maxFailsInput.value = activeMaxFails();
   renderSettingsContext();
   renderWeekGrid();
   if (state.sessionComplete) {
@@ -837,6 +874,7 @@ function addProfile() {
     groups: normalizeGroups(starterGroups),
     activeGroupIndex: 0,
     sessionLength: DEFAULT_SESSION_LENGTH,
+    maxFails: DEFAULT_MAX_FAILS,
   });
   state.activeProfileId = id;
   saveProfiles();
@@ -881,6 +919,14 @@ function updateSessionLength() {
   profile.sessionLength = clampSessionLength(sessionLengthInput.value);
   state.sessionLength = profile.sessionLength;
   saveSessionLength();
+  resetGame();
+}
+
+function updateMaxFails() {
+  const profile = activeProfile();
+  profile.maxFails = clampMaxFails(maxFailsInput.value);
+  state.maxFails = profile.maxFails;
+  saveMaxFails();
   resetGame();
 }
 
@@ -986,7 +1032,7 @@ function finishRound() {
   state.answered = true;
   state.practiced += 1;
   if (state.practiced >= activeSessionLength()) {
-    state.sessionPassed = state.missed <= MAX_MISSES_FOR_STAR;
+    state.sessionPassed = state.missed <= activeMaxFails();
     if (state.sessionPassed) addTodayStar();
     state.sessionComplete = true;
     state.sessionStarted = false;
@@ -1076,6 +1122,7 @@ addProfileButton.addEventListener("click", addProfile);
 saveProfileButton.addEventListener("click", saveCurrentProfile);
 deleteProfileButton.addEventListener("click", deleteProfile);
 sessionLengthInput.addEventListener("change", updateSessionLength);
+maxFailsInput.addEventListener("change", updateMaxFails);
 soundToggle.addEventListener("click", () => {
   state.soundOn = !state.soundOn;
   soundToggle.textContent = state.soundOn ? "🔊" : "🔇";

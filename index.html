@@ -148,18 +148,32 @@
           </div>
 
           <div class="picker-footer">
-            <label class="inline-field" for="session-length">
-              <span>每次題數</span>
-              <input
-                class="text-field small"
-                id="session-length"
-                type="number"
-                min="5"
-                max="30"
-                step="1"
-                inputmode="numeric"
-              />
-            </label>
+            <div class="picker-footer-fields">
+              <label class="inline-field" for="session-length">
+                <span>每次題數</span>
+                <input
+                  class="text-field small"
+                  id="session-length"
+                  type="number"
+                  min="5"
+                  max="30"
+                  step="1"
+                  inputmode="numeric"
+                />
+              </label>
+              <label class="inline-field" for="max-fails">
+                <span>可答錯題數</span>
+                <input
+                  class="text-field small"
+                  id="max-fails"
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="1"
+                  inputmode="numeric"
+                />
+              </label>
+            </div>
             <span class="group-count" id="group-count">0 / 10</span>
           </div>
 
