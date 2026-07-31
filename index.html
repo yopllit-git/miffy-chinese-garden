@@ -141,7 +141,6 @@
             <p class="settings-context">這裡是給大人看的地方，小園丁很少會來喔。</p>
           </header>
 
-          <p class="settings-group-label">人與花園</p>
           <div class="settings-card">
             <button class="settings-row" type="button" data-nav="gardeners">
               <span class="settings-tile tile-green">👧</span>
@@ -163,8 +162,7 @@
             </button>
           </div>
 
-          <p class="settings-group-label">練習怎麼進行</p>
-          <div class="settings-card">
+          <div class="settings-card settings-card-gap">
             <button class="settings-row" type="button" data-nav="rules">
               <span class="settings-tile tile-green">🌱</span>
               <span class="settings-row-text">
@@ -174,26 +172,13 @@
               <span class="settings-row-value" id="settings-rules-summary"></span>
               <span class="settings-chevron" aria-hidden="true">›</span>
             </button>
-          </div>
-
-          <p class="settings-group-label">信任與資訊</p>
-          <div class="settings-card">
-            <button class="settings-row" type="button" data-nav="sync">
-              <span class="settings-tile tile-blue">☁️</span>
+            <button class="settings-row" type="button" data-nav="stars">
+              <span class="settings-tile tile-gold">🌟</span>
               <span class="settings-row-text">
-                <span class="settings-row-title">同步狀態</span>
-                <span class="settings-row-desc">花園資料保存在雲端</span>
+                <span class="settings-row-title">集點設定</span>
+                <span class="settings-row-desc">每天最多能開幾朵花</span>
               </span>
-              <span class="settings-row-value" id="settings-sync-summary">已同步</span>
-              <span class="settings-chevron" aria-hidden="true">›</span>
-            </button>
-            <button class="settings-row" type="button" data-nav="about">
-              <span class="settings-tile tile-lavender">ℹ️</span>
-              <span class="settings-row-text">
-                <span class="settings-row-title">關於花園</span>
-                <span class="settings-row-desc">版本、隱私權、聯絡我們</span>
-              </span>
-              <span class="settings-row-value">v1.0</span>
+              <span class="settings-row-value" id="settings-stars-summary"></span>
               <span class="settings-chevron" aria-hidden="true">›</span>
             </button>
           </div>
@@ -241,9 +226,6 @@
             </button>
           </div>
 
-          <p class="settings-group-label">這位園丁的花園</p>
-          <div class="settings-card" id="gardener-gardens-list"></div>
-
           <p class="settings-group-label">危險操作</p>
           <div class="settings-card">
             <button class="settings-danger-btn" id="delete-profile-button" type="button">🗑 刪除這位小園丁</button>
@@ -255,6 +237,12 @@
             <button class="settings-back" type="button" data-nav="main">‹ 花園管理室</button>
             <h2>🌷 我的花園</h2>
           </header>
+          <section class="practice-controls" aria-label="選擇小園丁">
+            <label>
+              <span>小園丁</span>
+              <select id="gardens-profile-select"></select>
+            </label>
+          </section>
           <div id="gardens-by-owner"></div>
         </section>
 
@@ -312,6 +300,27 @@
                 <button type="button" id="max-fails-minus" aria-label="減少">−</button>
                 <span class="settings-stepper-value" id="max-fails-value">3</span>
                 <button type="button" id="max-fails-plus" aria-label="增加">＋</button>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-view" data-settings-view="stars">
+          <header class="settings-detail-head">
+            <button class="settings-back" type="button" data-nav="main">‹ 花園管理室</button>
+            <h2>🌟 集點設定</h2>
+          </header>
+          <p class="settings-group-label">每天最多能開幾朵花</p>
+          <div class="settings-card">
+            <div class="settings-stepper-row">
+              <span class="settings-row-text">
+                <span class="settings-row-title">每日花朵上限</span>
+                <span class="settings-row-desc">達到上限後，今天不會再多開花</span>
+              </span>
+              <span class="settings-stepper">
+                <button type="button" id="daily-cap-minus" aria-label="減少">−</button>
+                <span class="settings-stepper-value" id="daily-cap-value">3</span>
+                <button type="button" id="daily-cap-plus" aria-label="增加">＋</button>
               </span>
             </div>
           </div>

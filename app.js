@@ -47,6 +47,9 @@ const MAX_ATTEMPTS_PER_WORD = 2;
 const DEFAULT_MAX_FAILS = 3;
 const MIN_MAX_FAILS = 1;
 const MAX_MAX_FAILS = 10;
+const DEFAULT_DAILY_CAP = 3;
+const MIN_DAILY_CAP = 1;
+const MAX_DAILY_CAP = 10;
 
 const audioByText = {
   我: "wo.wav",
@@ -113,6 +116,7 @@ const state = {
   activeProfileId: loadActiveProfileId(),
   sessionLength: loadSessionLength(),
   maxFails: loadMaxFails(),
+  dailyCap: loadDailyCap(),
   cloudReady: false,
   cloudLoading: false,
 };
@@ -150,6 +154,7 @@ const leaderboardList = document.querySelector("#leaderboard-list");
 const leaderboardEmpty = document.querySelector("#leaderboard-empty");
 const practiceProfileSelect = document.querySelector("#practice-profile-select");
 const rewardProfileSelect = document.querySelector("#reward-profile-select");
+const gardensProfileSelect = document.querySelector("#gardens-profile-select");
 const practiceCourseSelect = document.querySelector("#practice-course-select");
 const addProfileButton = document.querySelector("#add-profile-button");
 const saveProfileButton = document.querySelector("#save-profile-button");
@@ -160,7 +165,6 @@ const settingsViews = document.querySelectorAll(".settings-view");
 const settingsNavTriggers = document.querySelectorAll("[data-nav]");
 const gardenerListEl = document.querySelector("#gardener-list");
 const gardenerDetailTitle = document.querySelector("#gardener-detail-title");
-const gardenerGardensListEl = document.querySelector("#gardener-gardens-list");
 const gardensByOwnerEl = document.querySelector("#gardens-by-owner");
 const gardenDetailTitle = document.querySelector("#garden-detail-title");
 const sessionLengthValue = document.querySelector("#session-length-value");
@@ -169,10 +173,13 @@ const sessionLengthPlus = document.querySelector("#session-length-plus");
 const maxFailsValue = document.querySelector("#max-fails-value");
 const maxFailsMinus = document.querySelector("#max-fails-minus");
 const maxFailsPlus = document.querySelector("#max-fails-plus");
+const dailyCapValue = document.querySelector("#daily-cap-value");
+const dailyCapMinus = document.querySelector("#daily-cap-minus");
+const dailyCapPlus = document.querySelector("#daily-cap-plus");
 const settingsGardenerCount = document.querySelector("#settings-gardener-count");
 const settingsGardenCount = document.querySelector("#settings-garden-count");
 const settingsRulesSummary = document.querySelector("#settings-rules-summary");
-const settingsSyncSummary = document.querySelector("#settings-sync-summary");
+const settingsStarsSummary = document.querySelector("#settings-stars-summary");
 const syncEmail = document.querySelector("#sync-email");
 const syncStatusText = document.querySelector("#sync-status-text");
 const syncStatusIcon = document.querySelector("#sync-status-icon");
@@ -280,6 +287,24 @@ function saveMaxFails() {
   saveLocalData();
 }
 
+function clampDailyCap(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return DEFAULT_DAILY_CAP;
+  return Math.min(Math.max(Math.round(number), MIN_DAILY_CAP), MAX_DAILY_CAP);
+}
+
+function loadDailyCap() {
+  return clampDailyCap(localStorage.getItem("miffy-daily-cap") || DEFAULT_DAILY_CAP);
+}
+
+function saveDailyCap() {
+  const profile = activeProfile();
+  profile.dailyCap = clampDailyCap(profile.dailyCap || state.dailyCap);
+  state.dailyCap = profile.dailyCap;
+  localStorage.setItem("miffy-daily-cap", String(state.dailyCap));
+  saveLocalData();
+}
+
 function saveProfiles() {
   const profile = activeProfile();
   profile.groups = activeGroups();
@@ -341,6 +366,7 @@ function mergeProfiles(localProfiles, cloudProfiles, legacyStars = {}, fallbackG
     existing.groups = mergeGroups(localProfile.groups, existing.groups);
     existing.sessionLength = clampSessionLength(localProfile.sessionLength || existing.sessionLength);
     existing.maxFails = clampMaxFails(localProfile.maxFails || existing.maxFails);
+    existing.dailyCap = clampDailyCap(localProfile.dailyCap || existing.dailyCap);
     existing.activeGroupIndex = Math.min(existing.activeGroupIndex || 0, existing.groups.length - 1);
   });
 
@@ -352,12 +378,14 @@ function persistLocalOnly() {
   state.activeGroupIndex = activeGroupIndex();
   state.sessionLength = activeSessionLength();
   state.maxFails = activeMaxFails();
+  state.dailyCap = activeDailyCap();
   localStorage.setItem("miffy-word-groups", JSON.stringify(state.groups));
   localStorage.setItem("miffy-active-group", String(state.activeGroupIndex));
   localStorage.setItem("miffy-profiles", JSON.stringify(state.profiles));
   localStorage.setItem("miffy-active-profile", state.activeProfileId);
   localStorage.setItem("miffy-session-length", String(state.sessionLength));
   localStorage.setItem("miffy-max-fails", String(state.maxFails));
+  localStorage.setItem("miffy-daily-cap", String(state.dailyCap));
 }
 
 async function loadCloudData() {
@@ -376,6 +404,7 @@ async function loadCloudData() {
       state.activeGroupIndex = activeGroupIndex();
       state.sessionLength = activeSessionLength();
       state.maxFails = activeMaxFails();
+      state.dailyCap = activeDailyCap();
       persistLocalOnly();
     }
 
@@ -400,6 +429,7 @@ async function saveCloudData() {
   state.activeGroupIndex = activeGroupIndex();
   state.sessionLength = activeSessionLength();
   state.maxFails = activeMaxFails();
+  state.dailyCap = activeDailyCap();
 
   await setDoc(
     cloudDocRef,
@@ -410,6 +440,7 @@ async function saveCloudData() {
       activeProfileId: state.activeProfileId,
       sessionLength: state.sessionLength,
       maxFails: state.maxFails,
+      dailyCap: state.dailyCap,
       updatedAt: serverTimestamp(),
     },
     { merge: true },
@@ -542,6 +573,7 @@ function normalizeProfiles(profiles, legacyStars = {}, fallbackGroups = null) {
             activeGroupIndex: Math.min(Math.max(Number(profile.activeGroupIndex) || 0, 0), groups.length - 1),
             sessionLength: clampSessionLength(profile.sessionLength || loadSessionLength()),
             maxFails: clampMaxFails(profile.maxFails || loadMaxFails()),
+            dailyCap: clampDailyCap(profile.dailyCap || loadDailyCap()),
           };
         })
         .filter((profile) => profile.id && profile.name)
@@ -557,6 +589,7 @@ function normalizeProfiles(profiles, legacyStars = {}, fallbackGroups = null) {
     activeGroupIndex: 0,
     sessionLength: loadSessionLength(),
     maxFails: loadMaxFails(),
+    dailyCap: loadDailyCap(),
   }];
 }
 
@@ -574,6 +607,7 @@ function activeProfile() {
   profile.activeGroupIndex = Math.min(Math.max(Number(profile.activeGroupIndex) || 0, 0), profile.groups.length - 1);
   profile.sessionLength = clampSessionLength(profile.sessionLength || state.sessionLength || DEFAULT_SESSION_LENGTH);
   profile.maxFails = clampMaxFails(profile.maxFails || state.maxFails || DEFAULT_MAX_FAILS);
+  profile.dailyCap = clampDailyCap(profile.dailyCap || state.dailyCap || DEFAULT_DAILY_CAP);
   return profile;
 }
 
@@ -597,6 +631,10 @@ function activeSessionLength() {
 
 function activeMaxFails() {
   return activeProfile().maxFails;
+}
+
+function activeDailyCap() {
+  return activeProfile().dailyCap;
 }
 
 function pickWord() {
@@ -781,7 +819,7 @@ function ordinalText(number) {
 }
 
 function renderStartScreen() {
-  const todayComplete = getTodayStars() >= 3;
+  const todayComplete = getTodayStars() >= activeDailyCap();
   const sessionLength = activeSessionLength();
   choiceGrid.innerHTML = "";
   state.answered = false;
@@ -804,7 +842,7 @@ function renderStartScreen() {
 
 function renderCompletionScreen() {
   const completedPracticeNumber = state.completedPracticeNumber || getTodayStars();
-  const todayComplete = getTodayStars() >= 3;
+  const todayComplete = getTodayStars() >= activeDailyCap();
   choiceGrid.innerHTML = "";
   instruction.textContent = "";
   roundLabel.hidden = true;
@@ -865,7 +903,7 @@ function renderCourseSelectors() {
 }
 
 function renderProfileSelectors() {
-  [practiceProfileSelect, rewardProfileSelect].forEach((select) => {
+  [practiceProfileSelect, rewardProfileSelect, gardensProfileSelect].forEach((select) => {
     select.innerHTML = "";
     state.profiles.forEach((profile) => {
       const option = document.createElement("option");
@@ -940,6 +978,7 @@ function addProfile() {
     activeGroupIndex: 0,
     sessionLength: DEFAULT_SESSION_LENGTH,
     maxFails: DEFAULT_MAX_FAILS,
+    dailyCap: DEFAULT_DAILY_CAP,
   });
   state.activeProfileId = id;
   saveProfiles();
@@ -1020,6 +1059,15 @@ function updateMaxFails(nextValue) {
   renderGrowingRulesView();
 }
 
+function updateDailyCap(nextValue) {
+  const profile = activeProfile();
+  profile.dailyCap = clampDailyCap(nextValue);
+  state.dailyCap = profile.dailyCap;
+  saveDailyCap();
+  resetGame();
+  renderStarsView();
+}
+
 function selectProfile(profileId) {
   state.activeProfileId = profileId;
   state.groups = activeGroups();
@@ -1093,9 +1141,10 @@ function showSettingsView(view) {
   if (view === "main") renderSettingsMain();
   else if (view === "gardeners") renderGardenersList();
   else if (view === "gardener-detail") renderGardenerDetailView();
-  else if (view === "gardens") renderGardensByOwner();
+  else if (view === "gardens") renderGardensList();
   else if (view === "garden-detail") renderGardenDetailView();
   else if (view === "rules") renderGrowingRulesView();
+  else if (view === "stars") renderStarsView();
   else if (view === "sync") renderSyncView();
 }
 
@@ -1103,7 +1152,7 @@ function renderSettingsMain() {
   settingsGardenerCount.textContent = `${state.profiles.length} 位園丁`;
   settingsGardenCount.textContent = `${totalGardenCount()} 座花園`;
   settingsRulesSummary.textContent = `${activeSessionLength()} 顆種子・可錯 ${activeMaxFails()} 次`;
-  settingsSyncSummary.textContent = state.cloudLoading ? "同步中..." : state.cloudReady ? "已同步" : "本機模式";
+  settingsStarsSummary.textContent = `每天 ${activeDailyCap()} 朵`;
 }
 
 function renderGardenersList() {
@@ -1129,10 +1178,18 @@ function renderGardenerDetailView() {
   gardenerDetailTitle.textContent = `👧 ${profile.name}`;
   profileNameInput.value = profile.name;
   deleteProfileButton.disabled = state.profiles.length <= 1;
+}
 
-  gardenerGardensListEl.innerHTML = "";
+function renderGardensList() {
+  gardensProfileSelect.value = state.activeProfileId;
+
+  const profile = activeProfile();
+  gardensByOwnerEl.innerHTML = "";
+
+  const card = document.createElement("div");
+  card.className = "settings-card";
   profile.groups.forEach((group, index) => {
-    gardenerGardensListEl.append(
+    card.append(
       createSettingsRow({
         icon: "🌷",
         tile: "gold",
@@ -1146,54 +1203,24 @@ function renderGardenerDetailView() {
       }),
     );
   });
-}
+  gardensByOwnerEl.append(card);
 
-function renderGardensByOwner() {
-  gardensByOwnerEl.innerHTML = "";
-  state.profiles.forEach((profile) => {
-    const label = document.createElement("p");
-    label.className = "settings-group-label";
-    label.textContent = `${profile.name}的花園`;
-    gardensByOwnerEl.append(label);
-
-    const card = document.createElement("div");
-    card.className = "settings-card";
-    profile.groups.forEach((group, index) => {
-      card.append(
-        createSettingsRow({
-          icon: "🌷",
-          tile: "gold",
-          title: group.name,
-          desc: `${group.words.length} 顆種子`,
-          onClick: () => {
-            if (state.activeProfileId !== profile.id) selectProfile(profile.id);
-            setActiveGroupIndex(index);
-            saveGroups();
-            showSettingsView("garden-detail");
-          },
-        }),
-      );
-    });
-    gardensByOwnerEl.append(card);
-
-    if (profile.groups.length < 10) {
-      const addCard = document.createElement("div");
-      addCard.className = "settings-card settings-card-gap";
-      addCard.append(
-        createSettingsRow({
-          icon: "＋",
-          tile: "gold",
-          title: "開一座新花園",
-          onClick: () => {
-            if (state.activeProfileId !== profile.id) selectProfile(profile.id);
-            addGroup();
-            showSettingsView("garden-detail");
-          },
-        }),
-      );
-      gardensByOwnerEl.append(addCard);
-    }
-  });
+  if (profile.groups.length < 10) {
+    const addCard = document.createElement("div");
+    addCard.className = "settings-card settings-card-gap";
+    addCard.append(
+      createSettingsRow({
+        icon: "＋",
+        tile: "gold",
+        title: "開一座新花園",
+        onClick: () => {
+          addGroup();
+          showSettingsView("garden-detail");
+        },
+      }),
+    );
+    gardensByOwnerEl.append(addCard);
+  }
 }
 
 function renderGardenDetailView() {
@@ -1207,6 +1234,10 @@ function renderGardenDetailView() {
 function renderGrowingRulesView() {
   sessionLengthValue.textContent = activeSessionLength();
   maxFailsValue.textContent = activeMaxFails();
+}
+
+function renderStarsView() {
+  dailyCapValue.textContent = activeDailyCap();
 }
 
 function renderSyncView() {
@@ -1241,11 +1272,11 @@ function getTodayStars() {
 }
 
 function addTodayStar() {
-  if (getTodayStars() >= 3) return;
+  if (getTodayStars() >= activeDailyCap()) return;
 
   const key = dateKey(new Date());
   const profile = activeProfile();
-  profile.dailyStars[key] = Math.min((profile.dailyStars[key] || 0) + 1, 3);
+  profile.dailyStars[key] = Math.min((profile.dailyStars[key] || 0) + 1, activeDailyCap());
   state.completedPracticeNumber = profile.dailyStars[key];
   saveProfiles();
 }
@@ -1262,6 +1293,7 @@ function renderWeekGrid() {
   weekGrid.innerHTML = "";
   const labels = ["一", "二", "三", "四", "五", "六", "日"];
   const start = getWeekStart(new Date());
+  const cap = activeDailyCap();
   let totalStars = 0;
 
   labels.forEach((label, index) => {
@@ -1271,13 +1303,13 @@ function renderWeekGrid() {
     const stars = activeProfile().dailyStars[key] || 0;
     totalStars += stars;
     const card = document.createElement("article");
-    card.className = `day-card${stars >= 3 ? " complete" : ""}`;
+    card.className = `day-card${stars >= cap ? " complete" : ""}`;
     card.innerHTML = `
       <p class="day-name">週${label}</p>
       <div class="day-stars" aria-label="開了 ${stars} 朵花">
-        ${[0, 1, 2].map((star) => `<span class="${star < stars ? "earned" : ""}">🌸</span>`).join("")}
+        ${Array.from({ length: cap }, (_, star) => `<span class="${star < stars ? "earned" : ""}">🌸</span>`).join("")}
       </div>
-      <p class="day-status">${stars >= 3 ? "盛開" : `${stars} / 3 朵`}</p>
+      <p class="day-status">${stars >= cap ? "盛開" : `${stars} / ${cap} 朵`}</p>
     `;
     weekGrid.append(card);
   });
@@ -1455,6 +1487,10 @@ navButtons.forEach((button) => {
 practiceCourseSelect.addEventListener("change", () => selectCourse(practiceCourseSelect.value));
 practiceProfileSelect.addEventListener("change", () => selectProfile(practiceProfileSelect.value));
 rewardProfileSelect.addEventListener("change", () => selectProfile(rewardProfileSelect.value));
+gardensProfileSelect.addEventListener("change", () => {
+  selectProfile(gardensProfileSelect.value);
+  renderGardensList();
+});
 speakButton.addEventListener("click", () => playWordAudio(state.current));
 startButton.addEventListener("click", startPractice);
 nextButton.addEventListener("click", nextRound);
@@ -1473,6 +1509,8 @@ sessionLengthMinus.addEventListener("click", () => updateSessionLength(activeSes
 sessionLengthPlus.addEventListener("click", () => updateSessionLength(activeSessionLength() + 1));
 maxFailsMinus.addEventListener("click", () => updateMaxFails(activeMaxFails() - 1));
 maxFailsPlus.addEventListener("click", () => updateMaxFails(activeMaxFails() + 1));
+dailyCapMinus.addEventListener("click", () => updateDailyCap(activeDailyCap() - 1));
+dailyCapPlus.addEventListener("click", () => updateDailyCap(activeDailyCap() + 1));
 confirmCancelButton.addEventListener("click", closeConfirm);
 confirmConfirmButton.addEventListener("click", () => {
   const action = confirmAction;
