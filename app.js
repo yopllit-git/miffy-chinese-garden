@@ -1474,7 +1474,7 @@ async function renderLeaderboard() {
 
     const name = document.createElement("p");
     name.className = "leaderboard-name";
-    name.textContent = `${entry.name || t("小園丁")}${t("的花園")}`;
+    name.textContent = entry.name || t("小園丁");
 
     const points = document.createElement("span");
     points.className = "leaderboard-points";
