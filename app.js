@@ -51,6 +51,43 @@ const DEFAULT_DAILY_CAP = 3;
 const MIN_DAILY_CAP = 1;
 const MAX_DAILY_CAP = 10;
 
+// Traditional -> Simplified map, scoped to this app's own interface
+// vocabulary (not a general-purpose converter). Only app-authored copy
+// is ever run through this — user-entered names/words/word-lists are
+// shown exactly as typed, in whichever script the parent used.
+const TRADITIONAL_TO_SIMPLIFIED = {
+  來: "来", 佈: "布", 係: "系", 個: "个", 們: "们", 傳: "传", 儲: "储", 兩: "两",
+  刪: "删", 則: "则", 剛: "刚", 動: "动", 區: "区", 嗎: "吗", 囉: "啰", 園: "园",
+  媽: "妈", 學: "学", 帳: "账", 幾: "几", 後: "后", 從: "从", 復: "复", 愛: "爱",
+  態: "态", 換: "换", 揮: "挥", 搖: "摇", 擇: "择", 擺: "摆", 敗: "败", 數: "数",
+  於: "于", 書: "书", 會: "会", 樂: "乐", 樣: "样", 機: "机", 權: "权", 氣: "气",
+  沒: "没", 減: "减", 滿: "满", 澆: "浇", 灑: "洒", 無: "无", 狀: "状", 甦: "苏",
+  畫: "画", 發: "发", 睜: "睁", 確: "确", 種: "种", 稱: "称", 紀: "纪", 紛: "纷",
+  細: "细", 組: "组", 結: "结", 給: "给", 經: "经", 綠: "绿", 綻: "绽", 練: "练",
+  繼: "继", 繽: "缤", 續: "续", 習: "习", 聲: "声", 聽: "听", 與: "与", 葉: "叶",
+  號: "号", 裝: "装", 裡: "里", 規: "规", 親: "亲", 覺: "觉", 覽: "览", 記: "记",
+  設: "设", 詞: "词", 試: "试", 認: "认", 說: "说", 課: "课", 請: "请", 讓: "让",
+  貓: "猫", 資: "资", 輕: "轻", 輪: "轮", 這: "这", 週: "周", 進: "进", 過: "过",
+  達: "达", 選: "选", 還: "还", 錄: "录", 錯: "错", 鑽: "钻", 長: "长", 門: "门",
+  閃: "闪", 開: "开", 關: "关", 陽: "阳", 險: "险", 雲: "云", 靜: "静", 響: "响",
+  頁: "页", 項: "项", 順: "顺", 頭: "头", 顆: "颗", 題: "题", 風: "风", 麗: "丽",
+  麼: "么", 點: "点", 體: "体",
+};
+
+const SCRIPT_STORAGE_KEY = "miffy-script";
+
+function loadScript() {
+  return localStorage.getItem(SCRIPT_STORAGE_KEY) === "hans" ? "hans" : "hant";
+}
+
+function toSimplified(text) {
+  return String(text).replace(/[一-鿿]/g, (ch) => TRADITIONAL_TO_SIMPLIFIED[ch] || ch);
+}
+
+function t(text) {
+  return state.script === "hans" ? toSimplified(text) : text;
+}
+
 const audioByText = {
   我: "wo.wav",
   你: "ni.wav",
@@ -117,6 +154,7 @@ const state = {
   sessionLength: loadSessionLength(),
   maxFails: loadMaxFails(),
   dailyCap: loadDailyCap(),
+  script: loadScript(),
   cloudReady: false,
   cloudLoading: false,
 };
@@ -143,6 +181,7 @@ const roundLabel = document.querySelector("#round-label");
 const progressFill = document.querySelector("#progress-fill");
 const navButtons = document.querySelectorAll(".nav-button");
 const pagePanels = document.querySelectorAll(".app-page");
+const leaderboardPanel = document.querySelector('[data-page-panel="leaderboard"]');
 const saveGroupButton = document.querySelector("#save-group-button");
 const deleteGroupButton = document.querySelector("#delete-group-button");
 const groupNameInput = document.querySelector("#group-name");
@@ -180,6 +219,8 @@ const settingsGardenerCount = document.querySelector("#settings-gardener-count")
 const settingsGardenCount = document.querySelector("#settings-garden-count");
 const settingsRulesSummary = document.querySelector("#settings-rules-summary");
 const settingsStarsSummary = document.querySelector("#settings-stars-summary");
+const scriptToggleButton = document.querySelector("#script-toggle-button");
+const scriptToggleValue = document.querySelector("#script-toggle-value");
 const syncEmail = document.querySelector("#sync-email");
 const syncStatusText = document.querySelector("#sync-status-text");
 const syncStatusIcon = document.querySelector("#sync-status-icon");
@@ -450,7 +491,7 @@ async function saveCloudData() {
 }
 
 function setAuthMessage(message) {
-  authStatus.textContent = message;
+  authStatus.textContent = t(message);
 }
 
 const SIGNIN_FLAG_KEY = "miffy-signing-in";
@@ -797,10 +838,13 @@ function pickGrowthMessage() {
 }
 
 function pickRevealMessage(answer) {
-  return pickFrom([
-    `這顆種子需要多一點陽光，答案是「${answer}」，我們澆下一顆吧！`,
-    `沒關係，園丁都是從練習中學會的。答案是「${answer}」。`,
+  // The answer is user-entered word content, never converted by t() —
+  // convert the template first, then splice the untouched answer in.
+  const template = pickFrom([
+    "這顆種子需要多一點陽光，答案是「⟦ANSWER⟧」，我們澆下一顆吧！",
+    "沒關係，園丁都是從練習中學會的。答案是「⟦ANSWER⟧」。",
   ]);
+  return t(template).replace("⟦ANSWER⟧", answer);
 }
 
 function renderPrompt() {
@@ -810,7 +854,7 @@ function renderPrompt() {
   startButton.hidden = true;
   speakButton.hidden = false;
 
-  instruction.textContent = "仔細聽一聽，找出正在發芽的那個字吧！";
+  instruction.textContent = t("仔細聽一聽，找出正在發芽的那個字吧！");
 }
 
 function ordinalText(number) {
@@ -824,20 +868,22 @@ function renderStartScreen() {
   choiceGrid.innerHTML = "";
   state.answered = false;
   state.current = null;
-  instruction.textContent = todayComplete
-    ? `今天的花園已經開滿花囉！要不要再種一顆，讓花園更繽紛？`
-    : `今天想種下哪一顆種子呢？輕輕澆水，看看它會長成什麼樣子。`;
+  instruction.textContent = t(
+    todayComplete
+      ? `今天的花園已經開滿花囉！要不要再種一顆，讓花園更繽紛？`
+      : `今天想種下哪一顆種子呢？輕輕澆水，看看它會長成什麼樣子。`,
+  );
   roundLabel.hidden = true;
   score.textContent = state.score;
   progressFill.style.width = `${Math.min((state.practiced / sessionLength) * 100, 100)}%`;
   celebration.hidden = true;
   completionMessage.textContent = "";
   startButton.hidden = false;
-  startButton.textContent = todayComplete ? "🌸 再種一顆" : "🌱 種下今天的種子";
+  startButton.textContent = t(todayComplete ? "🌸 再種一顆" : "🌱 種下今天的種子");
   startButton.disabled = false;
   speakButton.hidden = true;
   nextButton.disabled = true;
-  nextButton.textContent = "下一顆";
+  nextButton.textContent = t("下一顆");
 }
 
 function renderCompletionScreen() {
@@ -847,18 +893,20 @@ function renderCompletionScreen() {
   instruction.textContent = "";
   roundLabel.hidden = true;
   confetti.hidden = !state.sessionPassed;
-  completionMessage.textContent = !state.sessionPassed
-    ? pickFrom(RETRY_ROUND_MESSAGES)
-    : todayComplete
-      ? "🌸 今天的花園已經開滿花囉！還能繼續探索更多花朵。"
-      : pickFrom([`🌸 恭喜！今天第${ordinalText(completedPracticeNumber)}朵花盛開了，你的花園又更繽紛了一點。`, ...PASS_MESSAGES]);
+  completionMessage.textContent = t(
+    !state.sessionPassed
+      ? pickFrom(RETRY_ROUND_MESSAGES)
+      : todayComplete
+        ? "🌸 今天的花園已經開滿花囉！還能繼續探索更多花朵。"
+        : pickFrom([`🌸 恭喜！今天第${ordinalText(completedPracticeNumber)}朵花盛開了，你的花園又更繽紛了一點。`, ...PASS_MESSAGES]),
+  );
   celebration.hidden = false;
   startButton.hidden = false;
-  startButton.textContent = state.sessionPassed ? (todayComplete ? "🌸 再種一顆" : "🌱 種下下一顆") : "🌦 再澆一次水";
+  startButton.textContent = t(state.sessionPassed ? (todayComplete ? "🌸 再種一顆" : "🌱 種下下一顆") : "🌦 再澆一次水");
   startButton.disabled = false;
   speakButton.hidden = true;
   nextButton.disabled = true;
-  nextButton.textContent = "下一顆";
+  nextButton.textContent = t("下一顆");
 }
 
 function renderChoices() {
@@ -876,7 +924,7 @@ function renderChoices() {
 function renderStats() {
   const sessionLength = activeSessionLength();
   score.textContent = state.score;
-  roundLabel.textContent = `第 ${Math.min(state.practiced + 1, sessionLength)} 顆種子 / 共 ${sessionLength} 顆`;
+  roundLabel.textContent = t(`第 ${Math.min(state.practiced + 1, sessionLength)} 顆種子 / 共 ${sessionLength} 顆`);
   progressFill.style.width = `${Math.min((state.practiced / sessionLength) * 100, 100)}%`;
   renderWeekGrid();
   if (state.sessionComplete) {
@@ -885,7 +933,7 @@ function renderStats() {
     renderStartScreen();
   } else {
     roundLabel.hidden = false;
-    nextButton.textContent = "下一顆";
+    nextButton.textContent = t("下一顆");
   }
 }
 
@@ -1006,8 +1054,11 @@ function requestDeleteProfile() {
   if (state.profiles.length <= 1) return;
   const profile = activeProfile();
   openConfirm({
-    title: `刪除「${profile.name}」的花園？`,
-    body: `這會刪除${profile.name}所有的花園（共 ${profile.groups.length} 座）、字詞和本週集點紀錄，而且無法復原。`,
+    title: t("刪除「⟦NAME⟧」的花園？").replace("⟦NAME⟧", profile.name),
+    body: t(`這會刪除⟦NAME⟧所有的花園（共 ${profile.groups.length} 座）、字詞和本週集點紀錄，而且無法復原。`).replace(
+      "⟦NAME⟧",
+      profile.name,
+    ),
     onConfirm: () => {
       deleteProfile();
       showSettingsView("gardeners");
@@ -1032,8 +1083,8 @@ function requestDeleteGroup() {
   if (groups.length <= 1) return;
   const group = groups[activeGroupIndex()];
   openConfirm({
-    title: `刪除「${group.name}」花園？`,
-    body: `這座花園裡的 ${group.words.length} 個字詞會一起消失，而且無法復原。`,
+    title: t("刪除「⟦NAME⟧」花園？").replace("⟦NAME⟧", group.name),
+    body: t(`這座花園裡的 ${group.words.length} 個字詞會一起消失，而且無法復原。`),
     onConfirm: () => {
       deleteGroup();
       showSettingsView("gardens");
@@ -1134,7 +1185,10 @@ function totalGardenCount() {
   return state.profiles.reduce((sum, profile) => sum + (profile.groups?.length || 0), 0);
 }
 
+let currentSettingsView = "main";
+
 function showSettingsView(view) {
+  currentSettingsView = view;
   settingsViews.forEach((el) => {
     el.classList.toggle("active", el.dataset.settingsView === view);
   });
@@ -1149,10 +1203,10 @@ function showSettingsView(view) {
 }
 
 function renderSettingsMain() {
-  settingsGardenerCount.textContent = `${state.profiles.length} 位園丁`;
-  settingsGardenCount.textContent = `${totalGardenCount()} 座花園`;
-  settingsRulesSummary.textContent = `${activeSessionLength()} 顆種子・可錯 ${activeMaxFails()} 次`;
-  settingsStarsSummary.textContent = `每天 ${activeDailyCap()} 朵`;
+  settingsGardenerCount.textContent = t(`${state.profiles.length} 位園丁`);
+  settingsGardenCount.textContent = t(`${totalGardenCount()} 座花園`);
+  settingsRulesSummary.textContent = t(`${activeSessionLength()} 顆種子・可錯 ${activeMaxFails()} 次`);
+  settingsStarsSummary.textContent = t(`每天 ${activeDailyCap()} 朵`);
 }
 
 function renderGardenersList() {
@@ -1163,7 +1217,7 @@ function renderGardenersList() {
         icon: "👧",
         tile: "green",
         title: profile.name,
-        desc: `${profile.groups.length} 座花園`,
+        desc: t(`${profile.groups.length} 座花園`),
         onClick: () => {
           if (state.activeProfileId !== profile.id) selectProfile(profile.id);
           showSettingsView("gardener-detail");
@@ -1194,7 +1248,7 @@ function renderGardensList() {
         icon: "🌷",
         tile: "gold",
         title: group.name,
-        desc: `${group.words.length} 顆種子`,
+        desc: t(`${group.words.length} 顆種子`),
         onClick: () => {
           setActiveGroupIndex(index);
           saveGroups();
@@ -1212,7 +1266,7 @@ function renderGardensList() {
       createSettingsRow({
         icon: "＋",
         tile: "gold",
-        title: "開一座新花園",
+        title: t("開一座新花園"),
         onClick: () => {
           addGroup();
           showSettingsView("garden-detail");
@@ -1242,8 +1296,50 @@ function renderStarsView() {
 
 function renderSyncView() {
   syncEmail.textContent = auth.currentUser?.email || "-";
-  syncStatusText.textContent = state.cloudLoading ? "同步中..." : state.cloudReady ? "已同步" : "本機模式";
+  syncStatusText.textContent = t(state.cloudLoading ? "同步中..." : state.cloudReady ? "已同步" : "本機模式");
   syncStatusIcon.textContent = state.cloudReady ? "✓" : state.cloudLoading ? "…" : "○";
+}
+
+const SCRIPT_EXCLUDED_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT", "OPTION", "SCRIPT", "STYLE"]);
+const SCRIPT_EXCLUDED_CONTAINER_SELECTOR =
+  "#gardener-list, #gardens-by-owner, #leaderboard-list, #week-grid, #choice-grid";
+
+function walkAndSnapshotScript(root) {
+  if (!root) return;
+  root.querySelectorAll("*").forEach((el) => {
+    if (SCRIPT_EXCLUDED_TAGS.has(el.tagName)) return;
+    if (el.closest(SCRIPT_EXCLUDED_CONTAINER_SELECTOR)) return;
+    if (el.children.length > 0) return;
+    if (el.dataset.hant) return;
+    const text = el.textContent;
+    if (!text || !/[一-鿿]/.test(text)) return;
+    el.dataset.hant = text;
+  });
+}
+
+function applyScriptToStatic() {
+  document.querySelectorAll("[data-hant]").forEach((el) => {
+    el.textContent = t(el.dataset.hant);
+  });
+}
+
+function refreshDynamicScriptText() {
+  renderStats();
+  renderWeekGrid();
+  showSettingsView(currentSettingsView);
+  if (!leaderboardPanel.hidden) renderLeaderboard();
+}
+
+function applyScript(nextScript) {
+  state.script = nextScript;
+  localStorage.setItem(SCRIPT_STORAGE_KEY, nextScript);
+  scriptToggleValue.textContent = state.script === "hans" ? "简体中文" : "繁體中文";
+  applyScriptToStatic();
+  refreshDynamicScriptText();
+}
+
+function toggleScript() {
+  applyScript(state.script === "hans" ? "hant" : "hans");
 }
 
 let confirmAction = null;
@@ -1305,17 +1401,17 @@ function renderWeekGrid() {
     const card = document.createElement("article");
     card.className = `day-card${stars >= cap ? " complete" : ""}`;
     card.innerHTML = `
-      <p class="day-name">週${label}</p>
-      <div class="day-stars" aria-label="開了 ${stars} 朵花">
+      <p class="day-name">${t(`週${label}`)}</p>
+      <div class="day-stars" aria-label="${t(`開了 ${stars} 朵花`)}">
         ${Array.from({ length: cap }, (_, star) => `<span class="${star < stars ? "earned" : ""}">🌸</span>`).join("")}
       </div>
-      <p class="day-status">${stars >= cap ? "盛開" : `${stars} / ${cap} 朵`}</p>
+      <p class="day-status">${stars >= cap ? t("盛開") : t(`${stars} / ${cap} 朵`)}</p>
     `;
     weekGrid.append(card);
   });
 
-  rewardTitle.textContent = `${activeProfile().name}的花園日記`;
-  weekSummary.textContent = `這週你的花園開了 ${totalStars} 朵花🌸`;
+  rewardTitle.textContent = t("⟦NAME⟧的花園日記").replace("⟦NAME⟧", activeProfile().name);
+  weekSummary.textContent = t(`這週你的花園開了 ${totalStars} 朵花🌸`);
 }
 
 function showPage(page) {
@@ -1378,7 +1474,7 @@ async function renderLeaderboard() {
 
     const name = document.createElement("p");
     name.className = "leaderboard-name";
-    name.textContent = `${entry.name || "小園丁"}的花園`;
+    name.textContent = `${entry.name || t("小園丁")}${t("的花園")}`;
 
     const points = document.createElement("span");
     points.className = "leaderboard-points";
@@ -1424,7 +1520,7 @@ function handleAnswer(button, selected) {
     button.classList.add("correct");
     playCorrectFeedback();
     finishRound();
-    instruction.textContent = pickGrowthMessage();
+    instruction.textContent = t(pickGrowthMessage());
   } else {
     button.classList.add("wrong");
     button.disabled = true;
@@ -1437,7 +1533,7 @@ function handleAnswer(button, selected) {
       finishRound();
       instruction.textContent = pickRevealMessage(state.current.text);
     } else {
-      instruction.textContent = pickFrom(RETRY_MESSAGES);
+      instruction.textContent = t(pickFrom(RETRY_MESSAGES));
     }
   }
 
@@ -1517,6 +1613,12 @@ confirmConfirmButton.addEventListener("click", () => {
   closeConfirm();
   if (action) action();
 });
+scriptToggleButton.addEventListener("click", toggleScript);
+
+walkAndSnapshotScript(document.querySelector("#auth-screen"));
+walkAndSnapshotScript(document.querySelector("#app-shell"));
+scriptToggleValue.textContent = state.script === "hans" ? "简体中文" : "繁體中文";
+applyScriptToStatic();
 
 renderCourseSelectors();
 renderProfileSelectors();
