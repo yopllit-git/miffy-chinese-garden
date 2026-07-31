@@ -134,100 +134,237 @@
       </section>
 
       <section class="parent-panel app-page" data-page-panel="parent" aria-labelledby="parent-title" hidden>
-        <header class="settings-head">
-          <h2 id="parent-title">設定</h2>
-          <p class="settings-context" id="settings-context">在這裡幫小園丁準備花園</p>
-        </header>
 
-        <section class="manager-card picker-card" aria-label="小園丁與花園">
-          <div class="picker-row">
-            <div class="picker-row-head">
-              <label class="eyebrow" for="profile-tabs">小園丁</label>
-              <button class="add-chip" id="add-profile-button" type="button" title="新增小園丁" aria-label="新增小園丁">＋</button>
-            </div>
-            <select class="picker-select" id="profile-tabs" aria-label="小園丁清單"></select>
+        <section class="settings-view active" data-settings-view="main">
+          <header class="settings-head">
+            <h2 id="parent-title">🌿 花園管理室</h2>
+            <p class="settings-context">這裡是給大人看的地方，小園丁很少會來喔。</p>
+          </header>
+
+          <p class="settings-group-label">人與花園</p>
+          <div class="settings-card">
+            <button class="settings-row" type="button" data-nav="gardeners">
+              <span class="settings-tile tile-green">👧</span>
+              <span class="settings-row-text">
+                <span class="settings-row-title">小園丁們</span>
+                <span class="settings-row-desc">管理花園裡的小小園丁</span>
+              </span>
+              <span class="settings-row-value" id="settings-gardener-count"></span>
+              <span class="settings-chevron" aria-hidden="true">›</span>
+            </button>
+            <button class="settings-row" type="button" data-nav="gardens">
+              <span class="settings-tile tile-gold">🌷</span>
+              <span class="settings-row-text">
+                <span class="settings-row-title">我的花園</span>
+                <span class="settings-row-desc">每個花園都有自己的字詞</span>
+              </span>
+              <span class="settings-row-value" id="settings-garden-count"></span>
+              <span class="settings-chevron" aria-hidden="true">›</span>
+            </button>
           </div>
 
-          <div class="picker-row">
-            <div class="picker-row-head">
-              <label class="eyebrow" for="group-tabs">花園</label>
-              <button class="add-chip" id="add-group-button" type="button" title="新增花園" aria-label="新增花園">＋</button>
-            </div>
-            <select class="picker-select" id="group-tabs" aria-label="字詞組清單"></select>
+          <p class="settings-group-label">練習怎麼進行</p>
+          <div class="settings-card">
+            <button class="settings-row" type="button" data-nav="rules">
+              <span class="settings-tile tile-green">🌱</span>
+              <span class="settings-row-text">
+                <span class="settings-row-title">成長規則</span>
+                <span class="settings-row-desc">澆水幾次、能錯幾次</span>
+              </span>
+              <span class="settings-row-value" id="settings-rules-summary"></span>
+              <span class="settings-chevron" aria-hidden="true">›</span>
+            </button>
           </div>
 
-          <div class="picker-footer">
-            <div class="picker-footer-fields">
-              <label class="inline-field" for="session-length">
-                <span>每次題數</span>
-                <input
-                  class="text-field small"
-                  id="session-length"
-                  type="number"
-                  min="5"
-                  max="30"
-                  step="1"
-                  inputmode="numeric"
-                />
-              </label>
-              <label class="inline-field" for="max-fails">
-                <span>可答錯題數</span>
-                <input
-                  class="text-field small"
-                  id="max-fails"
-                  type="number"
-                  min="1"
-                  max="10"
-                  step="1"
-                  inputmode="numeric"
-                />
-              </label>
-            </div>
-            <span class="group-count" id="group-count">0 / 10</span>
+          <p class="settings-group-label">信任與資訊</p>
+          <div class="settings-card">
+            <button class="settings-row" type="button" data-nav="sync">
+              <span class="settings-tile tile-blue">☁️</span>
+              <span class="settings-row-text">
+                <span class="settings-row-title">同步狀態</span>
+                <span class="settings-row-desc">花園資料保存在雲端</span>
+              </span>
+              <span class="settings-row-value" id="settings-sync-summary">已同步</span>
+              <span class="settings-chevron" aria-hidden="true">›</span>
+            </button>
+            <button class="settings-row" type="button" data-nav="about">
+              <span class="settings-tile tile-lavender">ℹ️</span>
+              <span class="settings-row-text">
+                <span class="settings-row-title">關於花園</span>
+                <span class="settings-row-desc">版本、隱私權、聯絡我們</span>
+              </span>
+              <span class="settings-row-value">v1.0</span>
+              <span class="settings-chevron" aria-hidden="true">›</span>
+            </button>
           </div>
 
-          <details class="rename-drawer">
-            <summary>重新命名或刪除小園丁</summary>
-            <div class="rename-row">
-              <input class="text-field" id="profile-name" type="text" maxlength="18" placeholder="小園丁名稱" />
-              <div class="rename-actions">
-                <button class="small-button" id="save-profile-button" type="button">儲存名稱</button>
-                <button class="ghost-button" id="delete-profile-button" type="button">刪除小園丁</button>
-              </div>
-            </div>
-          </details>
-        </section>
-
-        <section class="manager-card editor-card" aria-label="編輯花園">
-          <h3 class="editor-heading">花園內容</h3>
-
-          <label class="field-label" for="group-name">花園名稱</label>
-          <input
-            class="text-field"
-            id="group-name"
-            type="text"
-            maxlength="18"
-            placeholder="例如：樂樂書第一課"
-          />
-
-          <label class="field-label" for="word-editor">字詞（每行一個）</label>
-          <textarea
-            class="word-editor"
-            id="word-editor"
-            rows="8"
-            spellcheck="false"
-            placeholder="我&#10;你&#10;媽媽&#10;爸爸"
-          ></textarea>
-
-          <div class="manager-actions">
-            <button class="secondary-button" id="save-group-button" type="button">儲存花園</button>
-            <button class="ghost-button" id="delete-group-button" type="button">刪除花園</button>
+          <p class="settings-group-label">危險區域</p>
+          <div class="settings-card">
+            <button class="settings-row settings-row-danger" id="logout-button" type="button">
+              <span class="settings-tile tile-danger">🚪</span>
+              <span class="settings-row-text">
+                <span class="settings-row-title">登出花園管理室</span>
+              </span>
+            </button>
           </div>
         </section>
 
-        <section class="manager-card account-card" aria-label="帳號">
-          <button class="ghost-button" id="logout-button" type="button">登出</button>
+        <section class="settings-view" data-settings-view="gardeners">
+          <header class="settings-detail-head">
+            <button class="settings-back" type="button" data-nav="main">‹ 花園管理室</button>
+            <h2>👧 小園丁們</h2>
+          </header>
+          <p class="settings-group-label">目前的園丁</p>
+          <div class="settings-card" id="gardener-list"></div>
+          <div class="settings-card settings-card-gap">
+            <button class="settings-row" id="add-profile-button" type="button">
+              <span class="settings-tile tile-green">＋</span>
+              <span class="settings-row-text"><span class="settings-row-title">新增一位小園丁</span></span>
+            </button>
+          </div>
         </section>
+
+        <section class="settings-view" data-settings-view="gardener-detail">
+          <header class="settings-detail-head">
+            <button class="settings-back" type="button" data-nav="gardeners">‹ 小園丁們</button>
+            <h2 id="gardener-detail-title">👧</h2>
+          </header>
+          <p class="settings-group-label">名字</p>
+          <div class="settings-card settings-field">
+            <label for="profile-name">小園丁名稱</label>
+            <input class="text-field" id="profile-name" type="text" maxlength="18" placeholder="小園丁名稱" />
+          </div>
+          <div class="settings-card settings-card-gap">
+            <button class="settings-row" id="save-profile-button" type="button">
+              <span class="settings-tile tile-green">💾</span>
+              <span class="settings-row-text"><span class="settings-row-title">儲存</span></span>
+            </button>
+          </div>
+
+          <p class="settings-group-label">這位園丁的花園</p>
+          <div class="settings-card" id="gardener-gardens-list"></div>
+
+          <p class="settings-group-label">危險操作</p>
+          <div class="settings-card">
+            <button class="settings-danger-btn" id="delete-profile-button" type="button">🗑 刪除這位小園丁</button>
+          </div>
+        </section>
+
+        <section class="settings-view" data-settings-view="gardens">
+          <header class="settings-detail-head">
+            <button class="settings-back" type="button" data-nav="main">‹ 花園管理室</button>
+            <h2>🌷 我的花園</h2>
+          </header>
+          <div id="gardens-by-owner"></div>
+        </section>
+
+        <section class="settings-view" data-settings-view="garden-detail">
+          <header class="settings-detail-head">
+            <button class="settings-back" type="button" data-nav="gardens">‹ 我的花園</button>
+            <h2 id="garden-detail-title">🌷</h2>
+          </header>
+          <p class="settings-group-label">花園名稱</p>
+          <div class="settings-card settings-field">
+            <label for="group-name">名稱</label>
+            <input class="text-field" id="group-name" type="text" maxlength="18" placeholder="例如：樂樂書第一課" />
+          </div>
+          <p class="settings-group-label">種子（字詞，每行一個）</p>
+          <div class="settings-card settings-field">
+            <textarea class="word-editor" id="word-editor" rows="8" spellcheck="false" placeholder="我&#10;你&#10;媽媽&#10;爸爸"></textarea>
+          </div>
+          <div class="settings-card settings-card-gap">
+            <button class="settings-row" id="save-group-button" type="button">
+              <span class="settings-tile tile-gold">💾</span>
+              <span class="settings-row-text"><span class="settings-row-title">儲存</span></span>
+            </button>
+          </div>
+
+          <p class="settings-group-label">危險操作</p>
+          <div class="settings-card">
+            <button class="settings-danger-btn" id="delete-group-button" type="button">🗑 刪除這座花園</button>
+          </div>
+        </section>
+
+        <section class="settings-view" data-settings-view="rules">
+          <header class="settings-detail-head">
+            <button class="settings-back" type="button" data-nav="main">‹ 花園管理室</button>
+            <h2>🌱 成長規則</h2>
+          </header>
+          <p class="settings-group-label">每一輪練習</p>
+          <div class="settings-card">
+            <div class="settings-stepper-row">
+              <span class="settings-row-text">
+                <span class="settings-row-title">每次澆水幾顆種子</span>
+                <span class="settings-row-desc">完成這些題數才算一輪</span>
+              </span>
+              <span class="settings-stepper">
+                <button type="button" id="session-length-minus" aria-label="減少">−</button>
+                <span class="settings-stepper-value" id="session-length-value">15</span>
+                <button type="button" id="session-length-plus" aria-label="增加">＋</button>
+              </span>
+            </div>
+            <div class="settings-stepper-row">
+              <span class="settings-row-text">
+                <span class="settings-row-title">可以錯幾次</span>
+                <span class="settings-row-desc">超過就不算開花</span>
+              </span>
+              <span class="settings-stepper">
+                <button type="button" id="max-fails-minus" aria-label="減少">−</button>
+                <span class="settings-stepper-value" id="max-fails-value">3</span>
+                <button type="button" id="max-fails-plus" aria-label="增加">＋</button>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-view" data-settings-view="sync">
+          <header class="settings-detail-head">
+            <button class="settings-back" type="button" data-nav="main">‹ 花園管理室</button>
+            <h2>☁️ 同步狀態</h2>
+          </header>
+          <p class="settings-group-label">帳號</p>
+          <div class="settings-card">
+            <div class="settings-row settings-row-static">
+              <span class="settings-tile tile-blue">📧</span>
+              <span class="settings-row-text"><span class="settings-row-title" id="sync-email">-</span></span>
+            </div>
+          </div>
+          <p class="settings-group-label">狀態</p>
+          <div class="settings-card">
+            <div class="settings-row settings-row-static">
+              <span class="settings-tile tile-green" id="sync-status-icon">✓</span>
+              <span class="settings-row-text"><span class="settings-row-title" id="sync-status-text">已同步</span></span>
+            </div>
+          </div>
+          <p class="settings-footnote">花園資料會自動保存到雲端，換裝置登入也看得到同一座花園。</p>
+        </section>
+
+        <section class="settings-view" data-settings-view="about">
+          <header class="settings-detail-head">
+            <button class="settings-back" type="button" data-nav="main">‹ 花園管理室</button>
+            <h2>ℹ️ 關於花園</h2>
+          </header>
+          <div class="settings-card">
+            <div class="settings-row settings-row-static">
+              <span class="settings-tile tile-lavender">🔖</span>
+              <span class="settings-row-text"><span class="settings-row-title">版本</span></span>
+              <span class="settings-row-value">v1.0</span>
+            </div>
+          </div>
+          <p class="settings-footnote settings-footnote-center">一個給孩子的認字花園，<br />用愛與耐心澆灌而成 🌸</p>
+        </section>
+
+        <div class="confirm-overlay" id="confirm-overlay" hidden>
+          <div class="confirm-sheet">
+            <div class="confirm-icon">🗑</div>
+            <h3 id="confirm-title"></h3>
+            <p id="confirm-body"></p>
+            <div class="confirm-actions">
+              <button class="confirm-cancel" id="confirm-cancel" type="button">取消</button>
+              <button class="confirm-confirm" id="confirm-confirm" type="button">確定刪除</button>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
 

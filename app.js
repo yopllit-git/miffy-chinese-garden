@@ -139,13 +139,10 @@ const roundLabel = document.querySelector("#round-label");
 const progressFill = document.querySelector("#progress-fill");
 const navButtons = document.querySelectorAll(".nav-button");
 const pagePanels = document.querySelectorAll(".app-page");
-const groupTabs = document.querySelector("#group-tabs");
-const addGroupButton = document.querySelector("#add-group-button");
 const saveGroupButton = document.querySelector("#save-group-button");
 const deleteGroupButton = document.querySelector("#delete-group-button");
 const groupNameInput = document.querySelector("#group-name");
 const wordEditor = document.querySelector("#word-editor");
-const groupCount = document.querySelector("#group-count");
 const weekGrid = document.querySelector("#week-grid");
 const rewardTitle = document.querySelector("#reward-title");
 const weekSummary = document.querySelector("#week-summary");
@@ -154,14 +151,36 @@ const leaderboardEmpty = document.querySelector("#leaderboard-empty");
 const practiceProfileSelect = document.querySelector("#practice-profile-select");
 const rewardProfileSelect = document.querySelector("#reward-profile-select");
 const practiceCourseSelect = document.querySelector("#practice-course-select");
-const profileTabs = document.querySelector("#profile-tabs");
 const addProfileButton = document.querySelector("#add-profile-button");
 const saveProfileButton = document.querySelector("#save-profile-button");
 const deleteProfileButton = document.querySelector("#delete-profile-button");
 const profileNameInput = document.querySelector("#profile-name");
-const sessionLengthInput = document.querySelector("#session-length");
-const maxFailsInput = document.querySelector("#max-fails");
-const settingsContext = document.querySelector("#settings-context");
+
+const settingsViews = document.querySelectorAll(".settings-view");
+const settingsNavTriggers = document.querySelectorAll("[data-nav]");
+const gardenerListEl = document.querySelector("#gardener-list");
+const gardenerDetailTitle = document.querySelector("#gardener-detail-title");
+const gardenerGardensListEl = document.querySelector("#gardener-gardens-list");
+const gardensByOwnerEl = document.querySelector("#gardens-by-owner");
+const gardenDetailTitle = document.querySelector("#garden-detail-title");
+const sessionLengthValue = document.querySelector("#session-length-value");
+const sessionLengthMinus = document.querySelector("#session-length-minus");
+const sessionLengthPlus = document.querySelector("#session-length-plus");
+const maxFailsValue = document.querySelector("#max-fails-value");
+const maxFailsMinus = document.querySelector("#max-fails-minus");
+const maxFailsPlus = document.querySelector("#max-fails-plus");
+const settingsGardenerCount = document.querySelector("#settings-gardener-count");
+const settingsGardenCount = document.querySelector("#settings-garden-count");
+const settingsRulesSummary = document.querySelector("#settings-rules-summary");
+const settingsSyncSummary = document.querySelector("#settings-sync-summary");
+const syncEmail = document.querySelector("#sync-email");
+const syncStatusText = document.querySelector("#sync-status-text");
+const syncStatusIcon = document.querySelector("#sync-status-icon");
+const confirmOverlay = document.querySelector("#confirm-overlay");
+const confirmTitle = document.querySelector("#confirm-title");
+const confirmBody = document.querySelector("#confirm-body");
+const confirmCancelButton = document.querySelector("#confirm-cancel");
+const confirmConfirmButton = document.querySelector("#confirm-confirm");
 
 let audioContext;
 let currentWordAudio;
@@ -364,8 +383,7 @@ async function loadCloudData() {
     state.cloudLoading = false;
     await saveCloudData();
     resetGame();
-    renderGroupManager();
-    renderProfileManager();
+    renderCourseSelectors();
     renderProfileSelectors();
     renderWeekGrid();
   } catch (error) {
@@ -581,12 +599,6 @@ function activeMaxFails() {
   return activeProfile().maxFails;
 }
 
-function renderSettingsContext() {
-  const profile = activeProfile();
-  const courseName = activeGroups()[activeGroupIndex()]?.name || "";
-  settingsContext.textContent = `${profile.name} · ${courseName}`;
-}
-
 function pickWord() {
   const words = activeWords();
   let index = Math.floor(Math.random() * words.length);
@@ -780,8 +792,6 @@ function renderStartScreen() {
   roundLabel.hidden = true;
   score.textContent = state.score;
   progressFill.style.width = `${Math.min((state.practiced / sessionLength) * 100, 100)}%`;
-  sessionLengthInput.value = sessionLength;
-  maxFailsInput.value = activeMaxFails();
   celebration.hidden = true;
   completionMessage.textContent = "";
   startButton.hidden = false;
@@ -830,9 +840,6 @@ function renderStats() {
   score.textContent = state.score;
   roundLabel.textContent = `第 ${Math.min(state.practiced + 1, sessionLength)} 顆種子 / 共 ${sessionLength} 顆`;
   progressFill.style.width = `${Math.min((state.practiced / sessionLength) * 100, 100)}%`;
-  sessionLengthInput.value = sessionLength;
-  maxFailsInput.value = activeMaxFails();
-  renderSettingsContext();
   renderWeekGrid();
   if (state.sessionComplete) {
     renderCompletionScreen();
@@ -842,28 +849,6 @@ function renderStats() {
     roundLabel.hidden = false;
     nextButton.textContent = "下一顆";
   }
-}
-
-function renderGroupManager() {
-  const groups = activeGroups();
-  const index = activeGroupIndex();
-  groupTabs.innerHTML = "";
-  groups.forEach((group, groupIndex) => {
-    const option = document.createElement("option");
-    option.value = String(groupIndex);
-    option.textContent = group.name;
-    option.selected = groupIndex === index;
-    groupTabs.append(option);
-  });
-
-  const activeGroup = groups[index];
-  groupNameInput.value = activeGroup.name;
-  wordEditor.value = activeGroup.words.map((word) => word.text).join("\n");
-
-  addGroupButton.disabled = groups.length >= 10;
-  deleteGroupButton.disabled = groups.length <= 1;
-  groupCount.textContent = `${groups.length} / 10`;
-  renderCourseSelectors();
 }
 
 function renderCourseSelectors() {
@@ -877,20 +862,6 @@ function renderCourseSelectors() {
     option.selected = groupIndex === index;
     practiceCourseSelect.append(option);
   });
-}
-
-function renderProfileManager() {
-  profileTabs.innerHTML = "";
-  state.profiles.forEach((profile) => {
-    const option = document.createElement("option");
-    option.value = profile.id;
-    option.textContent = profile.name;
-    option.selected = profile.id === state.activeProfileId;
-    profileTabs.append(option);
-  });
-
-  profileNameInput.value = activeProfile().name;
-  deleteProfileButton.disabled = state.profiles.length <= 1;
 }
 
 function renderProfileSelectors() {
@@ -932,7 +903,8 @@ function saveCurrentGroup() {
   };
   saveGroups();
   resetGame();
-  renderGroupManager();
+  renderCourseSelectors();
+  renderGardenDetailView();
 }
 
 function addGroup() {
@@ -946,17 +918,16 @@ function addGroup() {
   setActiveGroupIndex(groups.length - 1);
   saveGroups();
   resetGame();
-  renderGroupManager();
+  renderCourseSelectors();
 }
 
 function saveCurrentProfile() {
   const profile = activeProfile();
   profile.name = profileNameInput.value.trim() || profile.name;
   saveProfiles();
-  renderProfileManager();
   renderProfileSelectors();
   renderWeekGrid();
-  renderGroupManager();
+  renderGardenerDetailView();
 }
 
 function addProfile() {
@@ -973,27 +944,36 @@ function addProfile() {
   state.activeProfileId = id;
   saveProfiles();
   resetGame();
-  renderProfileManager();
   renderProfileSelectors();
+  renderCourseSelectors();
   renderWeekGrid();
-  renderGroupManager();
+  showSettingsView("gardener-detail");
 }
 
 function deleteProfile() {
   if (state.profiles.length <= 1) return;
-
-  const profile = activeProfile();
-  const confirmed = window.confirm(`刪除「${profile.name}」和所有學習紀錄？`);
-  if (!confirmed) return;
 
   const index = state.profiles.findIndex((profile) => profile.id === state.activeProfileId);
   state.profiles.splice(index, 1);
   state.activeProfileId = state.profiles[Math.max(0, index - 1)].id;
   saveProfiles();
   resetGame();
-  renderProfileManager();
   renderProfileSelectors();
+  renderCourseSelectors();
   renderWeekGrid();
+}
+
+function requestDeleteProfile() {
+  if (state.profiles.length <= 1) return;
+  const profile = activeProfile();
+  openConfirm({
+    title: `刪除「${profile.name}」的花園？`,
+    body: `這會刪除${profile.name}所有的花園（共 ${profile.groups.length} 座）、字詞和本週集點紀錄，而且無法復原。`,
+    onConfirm: () => {
+      deleteProfile();
+      showSettingsView("gardeners");
+    },
+  });
 }
 
 function deleteGroup() {
@@ -1005,23 +985,39 @@ function deleteGroup() {
   setActiveGroupIndex(Math.max(0, index - 1));
   saveGroups();
   resetGame();
-  renderGroupManager();
+  renderCourseSelectors();
 }
 
-function updateSessionLength() {
+function requestDeleteGroup() {
+  const groups = activeGroups();
+  if (groups.length <= 1) return;
+  const group = groups[activeGroupIndex()];
+  openConfirm({
+    title: `刪除「${group.name}」花園？`,
+    body: `這座花園裡的 ${group.words.length} 個字詞會一起消失，而且無法復原。`,
+    onConfirm: () => {
+      deleteGroup();
+      showSettingsView("gardens");
+    },
+  });
+}
+
+function updateSessionLength(nextValue) {
   const profile = activeProfile();
-  profile.sessionLength = clampSessionLength(sessionLengthInput.value);
+  profile.sessionLength = clampSessionLength(nextValue);
   state.sessionLength = profile.sessionLength;
   saveSessionLength();
   resetGame();
+  renderGrowingRulesView();
 }
 
-function updateMaxFails() {
+function updateMaxFails(nextValue) {
   const profile = activeProfile();
-  profile.maxFails = clampMaxFails(maxFailsInput.value);
+  profile.maxFails = clampMaxFails(nextValue);
   state.maxFails = profile.maxFails;
   saveMaxFails();
   resetGame();
+  renderGrowingRulesView();
 }
 
 function selectProfile(profileId) {
@@ -1031,17 +1027,206 @@ function selectProfile(profileId) {
   state.sessionLength = activeSessionLength();
   saveProfiles();
   resetGame();
-  renderProfileManager();
   renderProfileSelectors();
+  renderCourseSelectors();
   renderWeekGrid();
-  renderGroupManager();
 }
 
 function selectCourse(index) {
   setActiveGroupIndex(index);
   saveGroups();
   resetGame();
-  renderGroupManager();
+  renderCourseSelectors();
+}
+
+function createSettingsRow({ icon, tile, title, desc, value, onClick }) {
+  const row = document.createElement("button");
+  row.type = "button";
+  row.className = "settings-row";
+
+  const tileEl = document.createElement("span");
+  tileEl.className = `settings-tile tile-${tile}`;
+  tileEl.textContent = icon;
+  row.append(tileEl);
+
+  const textWrap = document.createElement("span");
+  textWrap.className = "settings-row-text";
+
+  const titleEl = document.createElement("span");
+  titleEl.className = "settings-row-title";
+  titleEl.textContent = title;
+  textWrap.append(titleEl);
+
+  if (desc) {
+    const descEl = document.createElement("span");
+    descEl.className = "settings-row-desc";
+    descEl.textContent = desc;
+    textWrap.append(descEl);
+  }
+  row.append(textWrap);
+
+  if (value) {
+    const valueEl = document.createElement("span");
+    valueEl.className = "settings-row-value";
+    valueEl.textContent = value;
+    row.append(valueEl);
+  }
+
+  const chevron = document.createElement("span");
+  chevron.className = "settings-chevron";
+  chevron.setAttribute("aria-hidden", "true");
+  chevron.textContent = "›";
+  row.append(chevron);
+
+  row.addEventListener("click", onClick);
+  return row;
+}
+
+function totalGardenCount() {
+  return state.profiles.reduce((sum, profile) => sum + (profile.groups?.length || 0), 0);
+}
+
+function showSettingsView(view) {
+  settingsViews.forEach((el) => {
+    el.classList.toggle("active", el.dataset.settingsView === view);
+  });
+  if (view === "main") renderSettingsMain();
+  else if (view === "gardeners") renderGardenersList();
+  else if (view === "gardener-detail") renderGardenerDetailView();
+  else if (view === "gardens") renderGardensByOwner();
+  else if (view === "garden-detail") renderGardenDetailView();
+  else if (view === "rules") renderGrowingRulesView();
+  else if (view === "sync") renderSyncView();
+}
+
+function renderSettingsMain() {
+  settingsGardenerCount.textContent = `${state.profiles.length} 位園丁`;
+  settingsGardenCount.textContent = `${totalGardenCount()} 座花園`;
+  settingsRulesSummary.textContent = `${activeSessionLength()} 顆種子・可錯 ${activeMaxFails()} 次`;
+  settingsSyncSummary.textContent = state.cloudLoading ? "同步中..." : state.cloudReady ? "已同步" : "本機模式";
+}
+
+function renderGardenersList() {
+  gardenerListEl.innerHTML = "";
+  state.profiles.forEach((profile) => {
+    gardenerListEl.append(
+      createSettingsRow({
+        icon: "👧",
+        tile: "green",
+        title: profile.name,
+        desc: `${profile.groups.length} 座花園`,
+        onClick: () => {
+          if (state.activeProfileId !== profile.id) selectProfile(profile.id);
+          showSettingsView("gardener-detail");
+        },
+      }),
+    );
+  });
+}
+
+function renderGardenerDetailView() {
+  const profile = activeProfile();
+  gardenerDetailTitle.textContent = `👧 ${profile.name}`;
+  profileNameInput.value = profile.name;
+  deleteProfileButton.disabled = state.profiles.length <= 1;
+
+  gardenerGardensListEl.innerHTML = "";
+  profile.groups.forEach((group, index) => {
+    gardenerGardensListEl.append(
+      createSettingsRow({
+        icon: "🌷",
+        tile: "gold",
+        title: group.name,
+        desc: `${group.words.length} 顆種子`,
+        onClick: () => {
+          setActiveGroupIndex(index);
+          saveGroups();
+          showSettingsView("garden-detail");
+        },
+      }),
+    );
+  });
+}
+
+function renderGardensByOwner() {
+  gardensByOwnerEl.innerHTML = "";
+  state.profiles.forEach((profile) => {
+    const label = document.createElement("p");
+    label.className = "settings-group-label";
+    label.textContent = `${profile.name}的花園`;
+    gardensByOwnerEl.append(label);
+
+    const card = document.createElement("div");
+    card.className = "settings-card";
+    profile.groups.forEach((group, index) => {
+      card.append(
+        createSettingsRow({
+          icon: "🌷",
+          tile: "gold",
+          title: group.name,
+          desc: `${group.words.length} 顆種子`,
+          onClick: () => {
+            if (state.activeProfileId !== profile.id) selectProfile(profile.id);
+            setActiveGroupIndex(index);
+            saveGroups();
+            showSettingsView("garden-detail");
+          },
+        }),
+      );
+    });
+    gardensByOwnerEl.append(card);
+
+    if (profile.groups.length < 10) {
+      const addCard = document.createElement("div");
+      addCard.className = "settings-card settings-card-gap";
+      addCard.append(
+        createSettingsRow({
+          icon: "＋",
+          tile: "gold",
+          title: "開一座新花園",
+          onClick: () => {
+            if (state.activeProfileId !== profile.id) selectProfile(profile.id);
+            addGroup();
+            showSettingsView("garden-detail");
+          },
+        }),
+      );
+      gardensByOwnerEl.append(addCard);
+    }
+  });
+}
+
+function renderGardenDetailView() {
+  const group = activeGroups()[activeGroupIndex()];
+  gardenDetailTitle.textContent = `🌷 ${group.name}`;
+  groupNameInput.value = group.name;
+  wordEditor.value = group.words.map((word) => word.text).join("\n");
+  deleteGroupButton.disabled = activeGroups().length <= 1;
+}
+
+function renderGrowingRulesView() {
+  sessionLengthValue.textContent = activeSessionLength();
+  maxFailsValue.textContent = activeMaxFails();
+}
+
+function renderSyncView() {
+  syncEmail.textContent = auth.currentUser?.email || "-";
+  syncStatusText.textContent = state.cloudLoading ? "同步中..." : state.cloudReady ? "已同步" : "本機模式";
+  syncStatusIcon.textContent = state.cloudReady ? "✓" : state.cloudLoading ? "…" : "○";
+}
+
+let confirmAction = null;
+
+function openConfirm({ title, body, onConfirm }) {
+  confirmTitle.textContent = title;
+  confirmBody.textContent = body;
+  confirmAction = onConfirm;
+  confirmOverlay.hidden = false;
+}
+
+function closeConfirm() {
+  confirmOverlay.hidden = true;
+  confirmAction = null;
 }
 
 function dateKey(date) {
@@ -1112,6 +1297,7 @@ function showPage(page) {
   });
   if (page === "rewards") renderWeekGrid();
   if (page === "leaderboard") renderLeaderboard();
+  if (page === "parent") showSettingsView("main");
 }
 
 async function awardLeaderboardPoint() {
@@ -1269,24 +1455,32 @@ navButtons.forEach((button) => {
 practiceCourseSelect.addEventListener("change", () => selectCourse(practiceCourseSelect.value));
 practiceProfileSelect.addEventListener("change", () => selectProfile(practiceProfileSelect.value));
 rewardProfileSelect.addEventListener("change", () => selectProfile(rewardProfileSelect.value));
-groupTabs.addEventListener("change", () => selectCourse(groupTabs.value));
-profileTabs.addEventListener("change", () => selectProfile(profileTabs.value));
 speakButton.addEventListener("click", () => playWordAudio(state.current));
 startButton.addEventListener("click", startPractice);
 nextButton.addEventListener("click", nextRound);
-addGroupButton.addEventListener("click", addGroup);
 saveGroupButton.addEventListener("click", saveCurrentGroup);
-deleteGroupButton.addEventListener("click", deleteGroup);
+deleteGroupButton.addEventListener("click", requestDeleteGroup);
 addProfileButton.addEventListener("click", addProfile);
 saveProfileButton.addEventListener("click", saveCurrentProfile);
-deleteProfileButton.addEventListener("click", deleteProfile);
-sessionLengthInput.addEventListener("change", updateSessionLength);
-maxFailsInput.addEventListener("change", updateMaxFails);
+deleteProfileButton.addEventListener("click", requestDeleteProfile);
 googleSigninButton.addEventListener("click", googleSignIn);
 logoutButton.addEventListener("click", () => signOut(auth));
 
-renderGroupManager();
-renderProfileManager();
+settingsNavTriggers.forEach((el) => {
+  el.addEventListener("click", () => showSettingsView(el.dataset.nav));
+});
+sessionLengthMinus.addEventListener("click", () => updateSessionLength(activeSessionLength() - 1));
+sessionLengthPlus.addEventListener("click", () => updateSessionLength(activeSessionLength() + 1));
+maxFailsMinus.addEventListener("click", () => updateMaxFails(activeMaxFails() - 1));
+maxFailsPlus.addEventListener("click", () => updateMaxFails(activeMaxFails() + 1));
+confirmCancelButton.addEventListener("click", closeConfirm);
+confirmConfirmButton.addEventListener("click", () => {
+  const action = confirmAction;
+  closeConfirm();
+  if (action) action();
+});
+
+renderCourseSelectors();
 renderProfileSelectors();
 renderWeekGrid();
 renderStats();
